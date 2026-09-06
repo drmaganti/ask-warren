@@ -44,16 +44,16 @@ def test_analyze_page_is_served():
     assert "Ask Warren about a stock." in response.text
     assert "U.S. equities V1" in response.text
     assert "Run Analysis" in response.text
-    assert "Evidence Coverage" in response.text
-    assert "Normalized Evidence Claims" in response.text
-    assert "SEC XBRL Fundamentals" in response.text
+    assert "Sources and Data Quality" in response.text
+    assert "Filing Insights and Recent Research" in response.text
+    assert "Supporting Evidence" in response.text
+    assert "SEC-Reported Fundamentals" in response.text
     assert "Technical Snapshot" in response.text
     assert "Insider Activity" in response.text
-    assert "Web Discovery" in response.text
     assert "Methodology" in response.text
     assert "Roadmap" in response.text
     assert 'aria-live="polite"' in response.text
-    assert "Data Gaps" in response.text
+    assert "Missing Information" in response.text
     assert "history.replaceState" in response.text
     assert "Sensitivity" in response.text
 
