@@ -26,7 +26,8 @@ class AlphaVantageEarningsCallProvider:
     )
 
     def __init__(self, api_key: str | None = None, timeout: float = 25.0, max_questions: int = 6):
-        self.api_key = api_key or os.getenv("ALPHA_VANTAGE_API_KEY")
+        configured_key = api_key or os.getenv("ALPHA_VANTAGE_API_KEY")
+        self.api_key = configured_key.strip() if configured_key else None
         self.timeout = timeout
         self.max_questions = min(max(1, max_questions), 10)
 
@@ -117,6 +118,16 @@ class AlphaVantageEarningsCallProvider:
             for quarter in self._quarters():
                 attempted += 1
                 payload = self._request(symbol, quarter)
+                provider_message = next(
+                    (
+                        str(payload.get(key) or "").strip()
+                        for key in ("Error Message", "Information", "Note")
+                        if payload.get(key)
+                    ),
+                    None,
+                )
+                if provider_message:
+                    raise RuntimeError(f"Alpha Vantage: {provider_message[:500]}")
                 turns = payload.get("transcript") if isinstance(payload, dict) else None
                 if not isinstance(turns, list) or not turns:
                     continue
