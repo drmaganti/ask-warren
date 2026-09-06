@@ -73,7 +73,7 @@ Deep mode currently runs:
 Structured company metrics
           +
 Source-attributed evidence
-  |-- SEC filing metadata + structured XBRL facts
+  |-- SEC metadata + XBRL facts + full-text RAG passages
   |-- Yahoo recent news headlines
   |-- Yahoo EPS/revenue estimates + revisions
   |-- Yahoo earnings surprise history
@@ -97,7 +97,7 @@ what changes the view / verdict / confidence
 
 Warren treats source material according to what was actually retrieved:
 
-- SEC filing entries are metadata; SEC XBRL entries are structured primary-source facts. Neither means the narrative filing text was read.
+- SEC filing entries are metadata, SEC XBRL entries are structured primary-source facts, and SEC RAG entries are retrieved narrative passages. These evidence types remain distinct.
 - Yahoo news entries are **headlines**, not full-article content. Deep must not infer facts beyond the headline.
 - Estimate revisions, earnings history and FRED observations are structured values and can be compared directly.
 - Every evidence source reports `ok`, `partial`, `unavailable` or `error`; missing sources reduce confidence rather than silently disappearing.
@@ -165,6 +165,7 @@ See [docs/API.md](docs/API.md).
 - [Methodology](docs/METHODOLOGY.md)
 - [Integration guide](docs/INTEGRATION.md)
 - [Evaluation strategy](docs/EVALUATION.md)
+- [SEC filing RAG: design and benefits](docs/RAG.md)
 - [Risks and limitations](docs/RISKS.md)
 - [Security](SECURITY.md)
 - [Roadmap](docs/ROADMAP.md)
@@ -172,14 +173,14 @@ See [docs/API.md](docs/API.md).
 
 ## Current status
 
-**v0.3** establishes the reusable evidence layer and grounds Deep mode in filings metadata, news headlines, analyst estimate revisions, recent earnings history and optional macro data. The first deterministic DCF slice now adds transparent Bear/Base/Bull values and sensitivity output when the required cash-flow, balance-sheet and share-count inputs are available.
+The current build grounds Deep mode in filing metadata, structured XBRL facts, retrieved SEC filing passages, news headlines, analyst estimate revisions, recent earnings history and optional macro data. Its deterministic DCF adds transparent Bear/Base/Bull values and sensitivity output when the required cash-flow, balance-sheet and share-count inputs are available.
 
 The transparent DCF V1 milestone is complete. It normalizes available annual free-cash-flow history, projects explicit revenue and FCF-margin paths, anchors growth to bounded forward estimates, calculates a company-specific discount rate, and exposes scenario and sensitivity results with clearly labeled fallbacks.
 
 Still required before production investment-research reliance:
 
 - score calibration/backtesting;
-- primary-source filing narrative-text extraction beyond metadata and XBRL facts;
+- deterministic section-by-section filing change extraction and evaluation;
 - production/SLA-backed market and news providers;
 - evidence freshness/caching policy;
 - methodology/model versioning in stored outputs;
@@ -230,6 +231,8 @@ The Vercel Upstash integration supplies these variables automatically. `KV_REST_
 When `UPSTASH_VECTOR_REST_URL` and `UPSTASH_VECTOR_REST_TOKEN` are configured, Deep mode retrieves citation-ready passages from the latest and prior annual and quarterly SEC filings. Ask Warren downloads the primary SEC documents, retains a small set of material-risk and business-change chunks, replaces the ticker's prior vector corpus, and retrieves passages relevant to changes in risks, demand, competition, margins, liquidity, capital allocation and management outlook.
 
 The vector index uses Upstash-hosted embeddings, so no separate embedding API key is required. Each ticker corpus is replaced rather than appended, and inactive ticker corpora are pruned after 30 days, preventing stale filings from consuming the free storage allowance. If the free vector service is temporarily unavailable or still indexing, Ask Warren returns the same bounded, materiality-ranked filing passages locally and reports the fallback in evidence metadata. RAG is not used for prices, ratios, technicals, estimates or macro observations; those remain structured source data.
+
+This improves the product in four practical ways: it connects financial changes to management's disclosed explanations, compares current and prior filing language, gives Bull/Bear/Risk reviewers stronger primary-document evidence, and makes conclusions easier to trace back to source passages. See [SEC filing RAG: design and benefits](docs/RAG.md) for the full rationale, safeguards and limitations.
 
 ## Development
 
