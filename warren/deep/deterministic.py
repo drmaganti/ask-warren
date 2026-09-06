@@ -159,7 +159,11 @@ class DeterministicDeepAnalysisProvider:
                 "Slower or uneven growth makes it harder to justify optimistic expectations."
             ),
             "risk resilience": (
-                "The observed financial cushion can help the company absorb normal business volatility."
+                (
+                    "Positive cash generation provides support, but a current ratio below 1.0 limits the short-term liquidity cushion."
+                    if metrics.current_ratio is not None and metrics.current_ratio < 1 else
+                    "The observed financial cushion can help the company absorb normal business volatility."
+                )
                 if supportive else
                 "The observed financial cushion may be limited if operating conditions deteriorate."
             ),
@@ -236,20 +240,20 @@ class DeterministicDeepAnalysisProvider:
         if technical.close is not None and technical.sma_200 is not None:
             if technical.close >= technical.sma_200:
                 supportive.append(
-                    f"Price is above the 200-day moving average ({technical.close:.2f} vs {technical.sma_200:.2f}), a supportive long-term trend observation."
+                    f"Price is above the 200-day moving average ({technical.close:.2f} vs {technical.sma_200:.2f}). Why it matters: this suggests supportive long-term momentum, but it does not establish that the shares are undervalued."
                 )
             else:
                 cautious.append(
-                    f"Price is below the 200-day moving average ({technical.close:.2f} vs {technical.sma_200:.2f}), a weak long-term trend observation."
+                    f"Price is below the 200-day moving average ({technical.close:.2f} vs {technical.sma_200:.2f}). Why it matters: this suggests cautious long-term momentum, but it does not establish that the business is weak."
                 )
         if technical.close is not None and technical.sma_50 is not None:
             if technical.close >= technical.sma_50:
                 supportive.append(
-                    f"Price is above the 50-day moving average ({technical.close:.2f} vs {technical.sma_50:.2f})."
+                    f"Price is above the 50-day moving average ({technical.close:.2f} vs {technical.sma_50:.2f}). Why it matters: recent market momentum is supportive, although it can change quickly."
                 )
             else:
                 cautious.append(
-                    f"Price is below the 50-day moving average ({technical.close:.2f} vs {technical.sma_50:.2f})."
+                    f"Price is below the 50-day moving average ({technical.close:.2f} vs {technical.sma_50:.2f}). Why it matters: recent market momentum is cautious, although it can change quickly."
                 )
         if technical.rsi_14 is not None:
             if technical.rsi_14 >= 70:
