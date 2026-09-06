@@ -200,6 +200,12 @@ class SecRagEvidenceProvider:
             return bundle
         try:
             chunks = [chunk for filing in filings for chunk in self._download_chunks(symbol, filing)]
+        except Exception as exc:
+            bundle.source_status.append(SourceStatus(source="SEC filing RAG", status="error", detail=f"{type(exc).__name__}: {exc}"))
+            return bundle
+
+        vector_error: str | None = None
+        try:
             self.vector.replace_ticker(symbol, chunks)
             results = self.vector.query(symbol, self.QUERY)
             # The hosted index is eventually consistent immediately after an
@@ -216,8 +222,9 @@ class SecRagEvidenceProvider:
                 results = chunks[:10]
                 retrieval_backend = "materiality-ranked-first-run-fallback"
         except Exception as exc:
-            bundle.source_status.append(SourceStatus(source="SEC filing RAG", status="error", detail=f"{type(exc).__name__}: {exc}"))
-            return bundle
+            vector_error = f"{type(exc).__name__}: {exc}"
+            results = chunks[:10]
+            retrieval_backend = "materiality-ranked-vector-error-fallback"
 
         seen: set[str] = set()
         for result in results:
@@ -245,5 +252,11 @@ class SecRagEvidenceProvider:
             "strategy": "latest-and-prior annual/quarterly filings",
             "retrieval_backend": retrieval_backend,
         }
-        bundle.source_status.append(SourceStatus(source="SEC filing RAG", status="ok" if seen else "partial", detail=f"Retrieved {len(seen)} full-text passages from {len(filings)} filings."))
+        if vector_error:
+            bundle.metadata["sec_rag"]["vector_warning"] = vector_error
+        status = "partial" if vector_error or not seen else "ok"
+        detail = f"Retrieved {len(seen)} full-text passages from {len(filings)} filings."
+        if vector_error:
+            detail += " Vector indexing was temporarily unavailable, so bounded local retrieval was used."
+        bundle.source_status.append(SourceStatus(source="SEC filing RAG", status=status, detail=detail))
         return bundle
