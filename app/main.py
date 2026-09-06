@@ -75,6 +75,10 @@ def health() -> dict[str, str]:
         "deep_provider": "gemini" if os.getenv("GEMINI_API_KEY") else "deterministic-v1.1",
         "evidence_router": EvidenceRouter.VERSION,
         "web_discovery": "exa" if os.getenv("EXA_API_KEY") else "disabled",
+        "cache": "persistent-redis" if (
+            (os.getenv("UPSTASH_REDIS_REST_URL") and os.getenv("UPSTASH_REDIS_REST_TOKEN"))
+            or (os.getenv("KV_REST_API_URL") and os.getenv("KV_REST_API_TOKEN"))
+        ) else "memory",
     }
 
 

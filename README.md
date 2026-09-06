@@ -206,7 +206,7 @@ Screen mode does not require an LLM key or evidence-provider keys.
 
 ## Runtime caching and API efficiency
 
-Ask Warren avoids unnecessary upstream requests with bounded, in-memory TTL caches:
+Ask Warren avoids unnecessary upstream requests with a two-level cache: fast in-memory entries plus optional persistent Upstash Redis entries:
 
 | Layer | Cache duration | Cache key |
 |---|---:|---|
@@ -221,7 +221,9 @@ Concurrent requests for the same cache key share a single upstream fetch. Indepe
 
 Deterministic results produced as a fallback after a transient Gemini failure are not cached, allowing the next request to retry Gemini instead of preserving a degraded response.
 
-These caches live within a warm application instance. A Vercel cold start begins with an empty cache, so this reduces repeated calls without introducing a database or paid service. Persistent cross-instance caching can later be added behind the same provider interfaces if traffic justifies it.
+When `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are configured, fresh entries survive Vercel cold starts and deployments. A bounded last-known copy is retained for seven days and is used only if an authoritative market or evidence provider temporarily fails. Redis errors never prevent analysis: the application falls back to its local cache and live providers. Without Redis configuration, the same code operates as a warm-instance memory cache.
+
+The Vercel Upstash integration supplies these variables automatically. `KV_REST_API_URL` and `KV_REST_API_TOKEN` are also accepted for compatibility. Keep all Redis credentials server-side and out of Git.
 
 ## Development
 

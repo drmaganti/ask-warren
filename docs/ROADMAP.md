@@ -185,7 +185,8 @@ Estimate revisions are intentionally not added to Screen until point-in-time/cal
 - [x] per-source evidence caches with separate TTLs;
 - [x] Deep cache keyed to metrics, scores and evidence version;
 - [x] duplicate-request coalescing and parallel evidence collection;
-- [ ] optional persistent cross-instance cache when usage justifies another service;
+- [x] optional persistent cross-instance cache through Upstash Redis;
+- [ ] event-driven invalidation for material filings and earnings releases;
 - [ ] event-driven invalidation after earnings/filings/material news;
 - [ ] retries/circuit breakers;
 - [ ] provider fallback;

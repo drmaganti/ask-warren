@@ -6,7 +6,10 @@ import json
 import threading
 import time
 from copy import deepcopy
-from typing import Callable, Generic, Hashable, TypeVar
+from datetime import UTC, datetime
+from typing import Any, Callable, Generic, Hashable, TypeVar
+
+import httpx
 
 from .models import CategoryScores, DeepAnalysis, EvidenceBundle, MetricSnapshot
 from .protocols import DeepAnalysisProvider, EvidenceProvider, MarketDataProvider
@@ -14,6 +17,50 @@ from .protocols import DeepAnalysisProvider, EvidenceProvider, MarketDataProvide
 
 K = TypeVar("K", bound=Hashable)
 V = TypeVar("V")
+
+
+class RedisJSONStore:
+    """Small Upstash REST client with bounded, best-effort persistence."""
+
+    def __init__(self, url: str, token: str, timeout_seconds: float = 2.0):
+        self.url = url.rstrip("/")
+        self.headers = {"Authorization": f"Bearer {token}"}
+        self.timeout_seconds = timeout_seconds
+
+    @classmethod
+    def from_env(cls) -> RedisJSONStore | None:
+        import os
+
+        url = os.getenv("UPSTASH_REDIS_REST_URL") or os.getenv("KV_REST_API_URL")
+        token = os.getenv("UPSTASH_REDIS_REST_TOKEN") or os.getenv("KV_REST_API_TOKEN")
+        return cls(url, token) if url and token else None
+
+    def _command(self, *parts: object) -> Any:
+        response = httpx.post(
+            self.url,
+            headers=self.headers,
+            json=list(parts),
+            timeout=self.timeout_seconds,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        if payload.get("error"):
+            raise RuntimeError(str(payload["error"]))
+        return payload.get("result")
+
+    def get(self, key: str) -> dict[str, Any] | None:
+        try:
+            raw = self._command("GET", key)
+            return json.loads(raw) if raw else None
+        except (httpx.HTTPError, RuntimeError, ValueError, TypeError):
+            return None
+
+    def set(self, key: str, value: dict[str, Any], ttl_seconds: int) -> None:
+        try:
+            self._command("SET", key, json.dumps(value, separators=(",", ":")), "EX", ttl_seconds)
+        except (httpx.HTTPError, RuntimeError, ValueError, TypeError):
+            # Persistence is an optimization; upstream analysis must remain available.
+            return
 
 
 class TTLCache(Generic[K, V]):
@@ -45,10 +92,76 @@ class TTLCache(Generic[K, V]):
             self._items[key] = (time.monotonic() + self.ttl_seconds, deepcopy(value))
 
 
+class PersistentTTLCache(Generic[V]):
+    """Memory-first cache backed by Redis, with a bounded last-known copy."""
+
+    def __init__(
+        self,
+        namespace: str,
+        ttl_seconds: float,
+        encode: Callable[[V], Any],
+        decode: Callable[[Any], V],
+        store: RedisJSONStore | None = None,
+        stale_seconds: int = 604800,
+    ):
+        self.namespace = namespace
+        self.ttl_seconds = max(1, int(ttl_seconds))
+        self.stale_seconds = max(self.ttl_seconds, stale_seconds)
+        self.encode = encode
+        self.decode = decode
+        self.store = store if store is not None else RedisJSONStore.from_env()
+        self.memory: TTLCache[str, V] = TTLCache(ttl_seconds)
+
+    def _key(self, key: str, stale: bool = False) -> str:
+        suffix = "stale" if stale else "fresh"
+        return f"ask-warren:v1:{self.namespace}:{key}:{suffix}"
+
+    def _decode(self, envelope: dict[str, Any] | None) -> V | None:
+        if not envelope:
+            return None
+        try:
+            return self.decode(envelope["value"])
+        except (KeyError, TypeError, ValueError):
+            return None
+
+    def get(self, key: str) -> V | None:
+        cached = self.memory.get(key)
+        if cached is not None:
+            return cached
+        if self.store is None:
+            return None
+        value = self._decode(self.store.get(self._key(key)))
+        if value is not None:
+            self.memory.set(key, value)
+        return value
+
+    def get_stale(self, key: str) -> V | None:
+        if self.store is None:
+            return None
+        return self._decode(self.store.get(self._key(key, stale=True)))
+
+    def set(self, key: str, value: V) -> None:
+        self.memory.set(key, value)
+        if self.store is None:
+            return
+        envelope = {
+            "cached_at": datetime.now(UTC).isoformat(),
+            "value": self.encode(value),
+        }
+        self.store.set(self._key(key), envelope, self.ttl_seconds)
+        self.store.set(self._key(key, stale=True), envelope, self.stale_seconds)
+
+
+def _model_encoder(value: Any) -> Any:
+    return value.model_dump(mode="json")
+
+
 class CachedMarketDataProvider:
     def __init__(self, upstream: MarketDataProvider, ttl_seconds: float = 300):
         self.upstream = upstream
-        self.cache: TTLCache[str, MetricSnapshot] = TTLCache(ttl_seconds)
+        self.cache: PersistentTTLCache[MetricSnapshot] = PersistentTTLCache(
+            "market", ttl_seconds, _model_encoder, MetricSnapshot.model_validate
+        )
         self._locks: dict[str, threading.Lock] = {}
         self._locks_guard = threading.Lock()
 
@@ -63,7 +176,13 @@ class CachedMarketDataProvider:
             cached = self.cache.get(key)
             if cached is not None:
                 return cached
-            value = self.upstream.fetch_metrics(key)
+            try:
+                value = self.upstream.fetch_metrics(key)
+            except Exception:
+                stale = self.cache.get_stale(key)
+                if stale is not None:
+                    return stale
+                raise
             self.cache.set(key, value)
             return value
 
@@ -77,7 +196,10 @@ class CachedEvidenceProvider:
     ):
         self.upstream = upstream
         self.key = key or (lambda ticker, metrics: ticker.strip().upper())
-        self.cache: TTLCache[str, EvidenceBundle] = TTLCache(ttl_seconds)
+        namespace = getattr(upstream, "cache_namespace", upstream.__class__.__name__.lower())
+        self.cache: PersistentTTLCache[EvidenceBundle] = PersistentTTLCache(
+            f"evidence:{namespace}", ttl_seconds, _model_encoder, EvidenceBundle.model_validate
+        )
         self._locks: dict[str, threading.Lock] = {}
         self._locks_guard = threading.Lock()
 
@@ -92,7 +214,18 @@ class CachedEvidenceProvider:
             cached = self.cache.get(key)
             if cached is not None:
                 return cached
-            value = self.upstream.fetch_evidence(ticker, metrics)
+            try:
+                value = self.upstream.fetch_evidence(ticker, metrics)
+            except Exception:
+                stale = self.cache.get_stale(key)
+                if stale is not None:
+                    stale.metadata = {
+                        **stale.metadata,
+                        "cache_freshness": "stale",
+                        "cache_reason": "live source refresh failed",
+                    }
+                    return stale
+                raise
             self.cache.set(key, value)
             return value
 
@@ -100,7 +233,12 @@ class CachedEvidenceProvider:
 class CachedDeepAnalysisProvider:
     def __init__(self, upstream: DeepAnalysisProvider, ttl_seconds: float = 1800):
         self.upstream = upstream
-        self.cache: TTLCache[str, tuple[DeepAnalysis, str | None]] = TTLCache(ttl_seconds)
+        self.cache: PersistentTTLCache[tuple[DeepAnalysis, str | None]] = PersistentTTLCache(
+            "analysis",
+            ttl_seconds,
+            lambda value: {"analysis": _model_encoder(value[0]), "model": value[1]},
+            lambda value: (DeepAnalysis.model_validate(value["analysis"]), value.get("model")),
+        )
         self._locks: dict[str, asyncio.Lock] = {}
 
     @staticmethod

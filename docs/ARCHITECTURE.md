@@ -161,7 +161,8 @@ Warren -> a specific UI
 - Deep: cached market/evidence lookups + one structured Gemini synthesis when the input fingerprint is not cached.
 - FRED is optional and adds no LLM call.
 - Runtime caching separately stores market snapshots, SEC evidence, Yahoo evidence, Exa results, global FRED observations and final analyses because they have different freshness requirements.
-- The cache is bounded and local to each warm serverless instance. It requires no paid persistence layer; cold starts safely rebuild entries from their authoritative sources.
+- The cache is memory-first and optionally backed by Upstash Redis. Redis entries retain the same source-specific TTLs, so persistence across cold starts does not weaken freshness.
+- A last-known copy is retained for seven days and is used only when a live market or evidence refresh fails. If Redis is missing or unavailable, providers continue through the local cache and authoritative sources.
 - Per-key request coalescing prevents simultaneous requests for the same ticker or global macro bundle from duplicating upstream work.
 - Gemini results are keyed by normalized metrics, deterministic scores and the evidence fingerprint, so a changed input cannot reuse an old synthesis.
 - A deterministic fallback caused by a transient Gemini failure is returned safely but not stored in the synthesis cache.
@@ -178,7 +179,7 @@ Different evidence should have different TTL/event refresh policies:
 - macro: based on series release frequency;
 - Deep synthesis: invalidated by material evidence changes.
 
-The current runtime cache is intentionally ephemeral. Persistent, cross-instance caching and event-driven invalidation remain future enhancements.
+Persistent cross-instance caching is implemented through Upstash Redis. Event-driven invalidation remains a future enhancement; current invalidation is TTL- and evidence-fingerprint-based.
 
 ## Failure behavior
 

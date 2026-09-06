@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import pytest
 
-from warren.cache import CachedDeepAnalysisProvider, CachedEvidenceProvider, CachedMarketDataProvider
+from warren.cache import (
+    CachedDeepAnalysisProvider,
+    CachedEvidenceProvider,
+    CachedMarketDataProvider,
+    PersistentTTLCache,
+)
 from warren.models import CategoryScores, DeepAnalysis, EvidenceBundle, MetricSnapshot
 
 
@@ -50,6 +55,17 @@ class FallbackDeep(CountingDeep):
     async def analyze(self, metrics, scores, evidence):
         analysis, _ = await super().analyze(metrics, scores, evidence)
         return analysis, "deterministic-v1.1"
+
+
+class FakeRedisStore:
+    def __init__(self):
+        self.items = {}
+
+    def get(self, key):
+        return self.items.get(key)
+
+    def set(self, key, value, ttl_seconds):
+        self.items[key] = value
 
 
 def test_market_data_cache_normalizes_ticker_and_copies_values():
@@ -117,3 +133,18 @@ async def test_deep_cache_does_not_preserve_degraded_fallback():
     await cached.analyze(metrics, scores, evidence)
 
     assert upstream.calls == 2
+
+
+def test_persistent_cache_survives_a_new_application_instance():
+    store = FakeRedisStore()
+    first = PersistentTTLCache(
+        "test", 60, lambda value: value, lambda value: value, store=store
+    )
+    first.set("AAPL", {"price": 100})
+
+    second = PersistentTTLCache(
+        "test", 60, lambda value: value, lambda value: value, store=store
+    )
+
+    assert second.get("AAPL") == {"price": 100}
+    assert second.get_stale("AAPL") == {"price": 100}
