@@ -219,6 +219,8 @@ Ask Warren avoids unnecessary upstream requests with bounded, in-memory TTL cach
 
 Concurrent requests for the same cache key share a single upstream fetch. Independent evidence providers are fetched in parallel. Cached models are copied on read and write so request-level normalization cannot mutate cached source data.
 
+Deterministic results produced as a fallback after a transient Gemini failure are not cached, allowing the next request to retry Gemini instead of preserving a degraded response.
+
 These caches live within a warm application instance. A Vercel cold start begins with an empty cache, so this reduces repeated calls without introducing a database or paid service. Persistent cross-instance caching can later be added behind the same provider interfaces if traffic justifies it.
 
 ## Development

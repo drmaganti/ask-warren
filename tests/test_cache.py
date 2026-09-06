@@ -46,6 +46,12 @@ class CountingDeep:
         )
 
 
+class FallbackDeep(CountingDeep):
+    async def analyze(self, metrics, scores, evidence):
+        analysis, _ = await super().analyze(metrics, scores, evidence)
+        return analysis, "deterministic-v1.1"
+
+
 def test_market_data_cache_normalizes_ticker_and_copies_values():
     upstream = CountingMarket()
     cached = CachedMarketDataProvider(upstream, ttl_seconds=60)
@@ -89,3 +95,25 @@ async def test_deep_cache_reuses_analysis_for_unchanged_inputs():
 
     assert first == second
     assert upstream.calls == 1
+
+
+@pytest.mark.asyncio
+async def test_deep_cache_does_not_preserve_degraded_fallback():
+    upstream = FallbackDeep()
+    cached = CachedDeepAnalysisProvider(upstream, ttl_seconds=60)
+    metrics = MetricSnapshot(ticker="AAPL", price=100)
+    scores = CategoryScores(
+        fundamentals=50,
+        valuation=50,
+        business_quality=50,
+        growth=50,
+        risk_resilience=50,
+        market_context=50,
+        overall=50,
+    )
+    evidence = EvidenceBundle(evidence_version="same")
+
+    await cached.analyze(metrics, scores, evidence)
+    await cached.analyze(metrics, scores, evidence)
+
+    assert upstream.calls == 2

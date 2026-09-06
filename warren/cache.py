@@ -129,5 +129,9 @@ class CachedDeepAnalysisProvider:
             if cached is not None:
                 return cached
             value = await self.upstream.analyze(metrics, scores, evidence)
-            self.cache.set(key, value)
+            # A resilient provider can return its deterministic fallback after a
+            # transient model error. Do not preserve that degraded result for the
+            # full synthesis TTL; the next request should be allowed to retry.
+            if not (value[1] or "").startswith("deterministic"):
+                self.cache.set(key, value)
             return value

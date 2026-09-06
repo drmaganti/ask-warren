@@ -164,6 +164,7 @@ Warren -> a specific UI
 - The cache is bounded and local to each warm serverless instance. It requires no paid persistence layer; cold starts safely rebuild entries from their authoritative sources.
 - Per-key request coalescing prevents simultaneous requests for the same ticker or global macro bundle from duplicating upstream work.
 - Gemini results are keyed by normalized metrics, deterministic scores and the evidence fingerprint, so a changed input cannot reuse an old synthesis.
+- A deterministic fallback caused by a transient Gemini failure is returned safely but not stored in the synthesis cache.
 
 ## Freshness model (target)
 
