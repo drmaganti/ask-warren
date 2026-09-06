@@ -180,10 +180,12 @@ Estimate revisions are intentionally not added to Screen until point-in-time/cal
 
 ## v0.6 — Cost, caching and reliability
 
-- [ ] cached market snapshots;
-- [ ] cached fundamentals until material update;
-- [ ] per-source evidence caches with separate TTLs;
-- [ ] Deep cache keyed to evidence version;
+- [x] cached market snapshots;
+- [x] cached fundamentals until TTL expiry;
+- [x] per-source evidence caches with separate TTLs;
+- [x] Deep cache keyed to metrics, scores and evidence version;
+- [x] duplicate-request coalescing and parallel evidence collection;
+- [ ] optional persistent cross-instance cache when usage justifies another service;
 - [ ] event-driven invalidation after earnings/filings/material news;
 - [ ] retries/circuit breakers;
 - [ ] provider fallback;

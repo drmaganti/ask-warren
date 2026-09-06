@@ -158,9 +158,12 @@ Warren -> a specific UI
 ## Cost architecture
 
 - Screen: structured market-data calls + local calculations.
-- Deep: market-data call + evidence-source network calls + 4 LLM requests today (Bull, Bear, Risk concurrently; Final afterward).
+- Deep: cached market/evidence lookups + one structured Gemini synthesis when the input fingerprint is not cached.
 - FRED is optional and adds no LLM call.
-- Future caching should separately cache market snapshots, filings/news/estimate evidence, macro evidence and final analyses because they have different freshness requirements.
+- Runtime caching separately stores market snapshots, SEC evidence, Yahoo evidence, Exa results, global FRED observations and final analyses because they have different freshness requirements.
+- The cache is bounded and local to each warm serverless instance. It requires no paid persistence layer; cold starts safely rebuild entries from their authoritative sources.
+- Per-key request coalescing prevents simultaneous requests for the same ticker or global macro bundle from duplicating upstream work.
+- Gemini results are keyed by normalized metrics, deterministic scores and the evidence fingerprint, so a changed input cannot reuse an old synthesis.
 
 ## Freshness model (target)
 
@@ -174,7 +177,7 @@ Different evidence should have different TTL/event refresh policies:
 - macro: based on series release frequency;
 - Deep synthesis: invalidated by material evidence changes.
 
-v0.3 does not yet implement persistent caching/freshness metadata beyond source dates supplied by individual evidence items.
+The current runtime cache is intentionally ephemeral. Persistent, cross-instance caching and event-driven invalidation remain future enhancements.
 
 ## Failure behavior
 

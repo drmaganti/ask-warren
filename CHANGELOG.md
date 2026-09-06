@@ -8,6 +8,10 @@ All notable product/module changes should be recorded here.
 
 ### Added
 
+- Bounded warm-instance TTL caches for market snapshots, SEC, Yahoo, FRED and Exa evidence.
+- Gemini synthesis caching keyed to metrics, scores and the normalized evidence fingerprint.
+- Per-key request coalescing so duplicate concurrent requests share one upstream fetch.
+- Cache behavior, freshness windows and serverless cold-start limitations in the README and architecture documentation.
 - Official SEC company-facts retrieval for selected US-GAAP XBRL fundamentals with period, form, filing date and accession provenance.
 - High-confidence normalized evidence claims for SEC XBRL facts and an Analyze-page fundamentals panel.
 - Deterministic evidence fingerprints and collection timestamps surfaced in every Deep evidence packet and Analyze report.
@@ -26,6 +30,8 @@ All notable product/module changes should be recorded here.
 
 ### Changed
 
+- FRED macro observations are cached globally because the same macro bundle applies to every ticker.
+- Independent evidence providers load concurrently, while source-specific TTLs preserve appropriate freshness.
 - Deep API responses and the Analyze page now expose the deterministic DCF result, normalization method, assumption basis, source and methodology version.
 - DCF methodology advanced to `dcf-v1.0`; application/package version advanced to `0.4.0`.
 - Expanded `docs/METHODOLOGY.md` from the initial score description into the full research-methodology contract for Warren and Ask Warren.

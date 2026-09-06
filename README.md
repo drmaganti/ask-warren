@@ -193,7 +193,7 @@ Still required before production investment-research reliance:
 export GEMINI_API_KEY="..."
 
 # Optional model override
-export GEMINI_MODEL="gemini-2.5-flash"
+export GEMINI_MODEL="gemini-3.6-flash"
 
 # Optional macro evidence. Deep continues without it when absent.
 export FRED_API_KEY="..."
@@ -203,6 +203,23 @@ export SEC_USER_AGENT="AskWarren/0.4 contact@example.com"
 ```
 
 Screen mode does not require an LLM key or evidence-provider keys.
+
+## Runtime caching and API efficiency
+
+Ask Warren avoids unnecessary upstream requests with bounded, in-memory TTL caches:
+
+| Layer | Cache duration | Cache key |
+|---|---:|---|
+| Yahoo market snapshot | 5 minutes | ticker |
+| Yahoo evidence | 15 minutes | ticker |
+| SEC filings and facts | 1 hour | ticker |
+| Exa web discovery | 2 hours | ticker |
+| FRED macro observations | 6 hours | global (shared by every ticker) |
+| Gemini synthesis | 30 minutes | metrics + scores + evidence fingerprint |
+
+Concurrent requests for the same cache key share a single upstream fetch. Independent evidence providers are fetched in parallel. Cached models are copied on read and write so request-level normalization cannot mutate cached source data.
+
+These caches live within a warm application instance. A Vercel cold start begins with an empty cache, so this reduces repeated calls without introducing a database or paid service. Persistent cross-instance caching can later be added behind the same provider interfaces if traffic justifies it.
 
 ## Development
 

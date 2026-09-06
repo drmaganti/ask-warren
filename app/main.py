@@ -6,6 +6,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 
+from warren.cache import CachedDeepAnalysisProvider, CachedEvidenceProvider, CachedMarketDataProvider
 from warren.deep import DeterministicDeepAnalysisProvider, GeminiDeepAnalysisProvider, ResilientDeepAnalysisProvider
 from warren.engine import Warren
 from warren.evidence import (
@@ -23,28 +24,31 @@ from .models import AnalyzeRequest, AnalyzeResponse
 
 def _deep_provider():
     if os.getenv("GEMINI_API_KEY"):
-        return ResilientDeepAnalysisProvider(
-            primary=GeminiDeepAnalysisProvider(),
-            fallback=DeterministicDeepAnalysisProvider(),
+        return CachedDeepAnalysisProvider(
+            ResilientDeepAnalysisProvider(
+                primary=GeminiDeepAnalysisProvider(),
+                fallback=DeterministicDeepAnalysisProvider(),
+            ),
+            ttl_seconds=1800,
         )
     return DeterministicDeepAnalysisProvider()
 
 
 def _evidence_providers():
     providers = [
-        SecFilingEvidenceProvider(),
-        YahooEvidenceProvider(),
-        FredMacroEvidenceProvider(),
+        CachedEvidenceProvider(SecFilingEvidenceProvider(), ttl_seconds=3600),
+        CachedEvidenceProvider(YahooEvidenceProvider(), ttl_seconds=900),
+        CachedEvidenceProvider(FredMacroEvidenceProvider(), ttl_seconds=21600, key=lambda ticker, metrics: "global"),
     ]
     if os.getenv("EXA_API_KEY"):
-        providers.append(ExaWebEvidenceProvider())
+        providers.append(CachedEvidenceProvider(ExaWebEvidenceProvider(), ttl_seconds=7200))
     return providers
 
 
 raw_evidence = CompositeEvidenceProvider(_evidence_providers())
 
 engine = Warren(
-    market_data=YFinanceMarketDataProvider(),
+    market_data=CachedMarketDataProvider(YFinanceMarketDataProvider(), ttl_seconds=300),
     deep_analysis=_deep_provider(),
     evidence=EvidenceRouter(raw_evidence),
 )
