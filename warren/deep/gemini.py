@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import json
 import os
 
@@ -66,34 +65,10 @@ class GeminiDeepAnalysisProvider:
             "When practical, identify the source or claim category supporting an argument."
         )
 
-        bull_prompt = f"""You are Warren's independent BULL analyst. {shared}
+        final_prompt = f"""You are Warren's investment research evaluator. {shared}
 Evidence packet: {packet}
-Build the strongest evidence-grounded case FOR further investment interest, while acknowledging weaknesses.
-Return JSON only: {{"arguments":[3-5 concise strings],"weaknesses":[1-3 strings]}}."""
 
-        bear_prompt = f"""You are Warren's independent BEAR analyst. {shared}
-Evidence packet: {packet}
-Build the strongest evidence-grounded case AGAINST investment interest, including valuation and thesis-break risks.
-Return JSON only: {{"arguments":[3-5 concise strings],"weaknesses":[1-3 strings]}}."""
-
-        risk_prompt = f"""You are Warren's independent RISK reviewer. {shared}
-Evidence packet: {packet}
-Focus on downside, evidence gaps, balance-sheet resilience, expectation risk, and whether current evidence is stale or incomplete.
-Return JSON only: {{"risks":[3-5 concise strings],"missing_evidence":[0-7 strings],"summary":"string"}}."""
-
-        bull, bear, risk = await asyncio.gather(
-            self._generate(bull_prompt),
-            self._generate(bear_prompt),
-            self._generate(risk_prompt),
-        )
-
-        final_prompt = f"""You are Warren's FINAL investment research evaluator. {shared}
-Evidence packet: {packet}
-Bull analyst: {json.dumps(bull)}
-Bear analyst: {json.dumps(bear)}
-Risk reviewer: {json.dumps(risk)}
-
-Synthesize rather than vote. Weight source facts above agent rhetoric. A strong company can still be an unattractive stock if valuation or expectations are unfavorable. If filings are only metadata or news is only headline-level, state the limitation rather than pretending the underlying documents were read. Reduce confidence when important source_status entries are unavailable/error, high-authority evidence is missing, or key metrics are missing.
+Perform an internal bull, bear, and risk review before forming the final view. Build the strongest evidence-grounded case on each side, then synthesize rather than vote. Weight source facts above rhetoric. A strong company can still be an unattractive stock if valuation or expectations are unfavorable. If filings are only metadata or news is only headline-level, state the limitation rather than pretending the underlying documents were read. Reduce confidence when important source_status entries are unavailable/error, high-authority evidence is missing, or key metrics are missing.
 
 The verdict MUST be exactly one of:
 - "attractive" — favorable quality + valuation + risk/reward at the current price;
