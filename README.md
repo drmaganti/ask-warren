@@ -240,6 +240,22 @@ This improves the product in four practical ways: it connects financial changes 
 
 ## Development
 
+### Earnings-driver analysis
+
+Quarterly statement comparisons include operating income, pretax income, tax provision,
+interest, other income, capital expenditure and working-capital changes when available.
+An arithmetic bridge separates operating-income changes, below-operating changes and
+tax-expense effects, retaining any unexplained residual. Comparisons require aligned
+periods; missing quarters are not substituted for the previous quarter or year.
+
+Filing retrieval targets transaction gains, restructuring, taxes and cash-flow notes.
+Synthesis must distinguish recurring operations from one-time effects, prefer matching
+company-reported GAAP figures over conflicting aggregator values, and cite evidence for
+causal explanations. Revenue contraction alone does not establish weaker customer demand.
+When the evidence does not identify a cause, analysis states what is missing. The
+deterministic fallback provides arithmetic diagnostics, not an inferred management explanation.
+This does not yet provide a complete balance-sheet bridge or guarantee retrieval of every note.
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate

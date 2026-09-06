@@ -55,13 +55,16 @@ class YFinanceMarketDataProvider:
             ("quarterly_free_cash_flow", "Quarterly free cash flow", "money", values(cashflow, "Free Cash Flow")),
         ]
         comparisons: list[MetricComparison] = []
+        for name, row in (("operating_income", "Operating Income"), ("pretax_income", "Pretax Income"), ("tax_provision", "Tax Provision"), ("interest_expense", "Interest Expense"), ("other_income", "Other Income Expense"), ("capital_expenditure", "Capital Expenditure"), ("working_capital_change", "Change In Working Capital")):
+            frame = cashflow if name in {"capital_expenditure", "working_capital_change"} else income
+            series.append(("quarterly_" + name, "Quarterly " + name.replace("_", " "), "money", values(frame, row)))
         for metric, label, unit, observations in series:
             ordered = sorted(observations, reverse=True)
             if not ordered:
                 continue
             current_period = ordered[0]
-            previous_period = ordered[1] if len(ordered) > 1 else None
-            year_ago_period = ordered[4] if len(ordered) > 4 else None
+            previous_period = next((p for p in ordered[1:] if 70 <= (current_period - p).days <= 110), None)
+            year_ago_period = next((p for p in ordered[1:] if 350 <= (current_period - p).days <= 380), None)
             comparisons.append(MetricComparison(
                 metric=metric,
                 label=label,

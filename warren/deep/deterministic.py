@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from ..models import AnalysisCitation, CategoryScores, DeepAnalysis, EvidenceBundle, MetricSnapshot
+from .drivers import earnings_bridge
 
 
 class DeterministicDeepAnalysisProvider:
@@ -344,8 +345,8 @@ class DeterministicDeepAnalysisProvider:
                 ))
             if item.revenue_growth is not None and item.revenue_growth < 0:
                 bearish.append((
-                    f"Near-term demand expectations remain soft: for {label}, analysts report {details}. "
-                    "Why it matters: earnings improvement is harder to sustain when expected revenue is contracting rather than expanding.",
+                    f"Revenue expectations are contracting: for {label}, analysts report {details}. "
+                    "Why it matters: check transaction effects, currency and customer volumes before attributing the forecast to weaker demand.",
                     claim_id,
                 ))
         return bullish, bearish
@@ -421,6 +422,18 @@ class DeterministicDeepAnalysisProvider:
         if not evidence.news and len(risks) < 5:
             risks.append("No recent headline evidence is available in the current packet.")
         risks = risks[:5]
+        bridge = earnings_bridge(metrics)
+        if bridge["status"] == "available" and bridge["net_income_change"] > 0:
+            concerns.insert(0, (
+                f"What contributed to the earnings increase: operating income changed by {self._money(bridge['operating_income_change'])}; "
+                f"items below operating income contributed {self._money(bridge['below_operating_income_change'])}; "
+                f"the tax-expense effect was {self._money(bridge['tax_expense_effect'])}. "
+                f"The unreconciled difference is {self._money(bridge['unreconciled_change'])}. "
+                "These are provider-statement calculations. The filing reconciliation is required to identify transaction gains, "
+                "recurring effects and any attribution differences before treating the earnings increase as sustainable."
+            ))
+            bear_case.append(concerns[0])
+            bear_case = bear_case[:1] + [concerns[0]] + bear_case[1:3]
 
         citations: list[AnalysisCitation] = []
         if forward_support:

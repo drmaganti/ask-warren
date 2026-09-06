@@ -94,15 +94,19 @@ class UpstashVectorClient:
 class SecRagEvidenceProvider:
     """Adds citation-ready full-text SEC passages to normal SEC evidence."""
 
-    cache_namespace = "sec-rag"
+    cache_namespace = "sec-rag-drivers-v2"
     QUERY = (
         "What materially changed in business risks, demand, competition, strategy, margins, "
-        "liquidity, capital allocation, guidance, or management's outlook?"
+        "liquidity, capital allocation, guidance, or management's outlook? Explain revenue and earnings changes: "
+        "divestiture gains, deconsolidation, acquisitions, restructuring, taxes, interest, working capital, "
+        "capital expenditure, segment transactions and GAAP versus adjusted reconciliations."
     )
     MATERIAL_TERMS = (
         "risk", "competition", "demand", "margin", "liquidity", "capital allocation",
         "strategy", "outlook", "guidance", "supplier", "customer concentration",
         "cybersecurity", "regulation", "impairment", "restructuring",
+        "divestiture", "deconsolidation", "effective tax rate", "gain on", "net gain",
+        "working capital", "capital expenditure", "reconciliation", "sales leverage",
     )
     CORPUS_TTL_SECONDS = 30 * 24 * 60 * 60
 

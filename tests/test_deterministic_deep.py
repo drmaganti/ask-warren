@@ -90,7 +90,7 @@ async def test_deterministic_provider_returns_public_verdict_vocabulary():
     assert all("above average" not in item.lower() for item in analysis.bull_case + analysis.bear_case)
     assert any("Why it matters:" in item for item in analysis.bull_case)
     assert any("Earnings expectations are improving" in item for item in analysis.bull_case)
-    assert any("Near-term demand expectations remain soft" in item for item in analysis.bear_case)
+    assert any("Revenue expectations are contracting" in item for item in analysis.bear_case)
     assert {citation.section for citation in analysis.citations} == {"bull_case", "bear_case"}
     assert "/100" not in analysis.thesis
     assert analysis.bear_case

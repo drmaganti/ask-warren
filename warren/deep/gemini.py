@@ -6,6 +6,7 @@ import os
 import httpx
 
 from ..models import CategoryScores, DeepAnalysis, EvidenceBundle, MetricSnapshot
+from .drivers import earnings_bridge
 
 
 class GeminiDeepAnalysisProvider:
@@ -40,6 +41,7 @@ class GeminiDeepAnalysisProvider:
             {
                 "metrics": metrics.model_dump(exclude_none=True, mode="json"),
                 "scores": scores.model_dump(mode="json"),
+                "earnings_bridge": earnings_bridge(metrics),
                 "evidence": evidence.model_dump(exclude_none=True, mode="json"),
             },
             separators=(",", ":"),
@@ -77,6 +79,12 @@ class GeminiDeepAnalysisProvider:
 Evidence packet: {packet}
 
 Perform an internal bull, bear, and risk review before forming the final view. Build the strongest evidence-grounded case on each side, then synthesize rather than vote. Weight source facts above rhetoric. A strong company can still be an unattractive stock if valuation or expectations are unfavorable. If filings are only metadata or news is only headline-level, state the limitation rather than pretending the underlying documents were read. Reduce confidence when important source_status entries are unavailable/error, high-authority evidence is missing, or key metrics are missing.
+
+Before writing, reconcile revenue, operating income, pretax income, taxes, net income and cash flow. Use earnings_bridge for arithmetic only. Investigate divestitures, acquisitions, deconsolidation, restructuring, impairment, tax changes, interest, share count, working capital and capital spending using retrieved statements and notes. Separate recurring operations from transaction gains and accounting effects. Revenue contraction alone does not establish weaker demand; check segment scope, currency, pricing and transactions. A lower tax rate does not necessarily mean lower tax expense.
+
+Prefer company-reported GAAP values to conflicting aggregator values for the same period and scope. Explicitly disclose unresolved discrepancies; never silently mix GAAP, adjusted, segment and consolidated margins. Do not infer efficiency from net-income growth or claim that margin expansion explains the entire earnings change. Distinguish net income from EPS and evaluate buybacks only with share-count evidence.
+
+Lead Bull/Bear with the most material supported causal findings. Each point should state the quantified driver, whether it is recurring or one-time, the investor implication, and what to watch. Cite the exact claim supporting the cause, not a related earnings headline. Use 'The filing attributes...' for management explanations and 'The statements show...' for arithmetic. If causation is unresolved, state the specific missing evidence. Avoid vague 'maybe' language while retaining explicit uncertainty about forecasts. Do not force a causal explanation when evidence is insufficient.
 
 The verdict MUST be exactly one of:
 - "attractive" — favorable quality + valuation + risk/reward at the current price;
