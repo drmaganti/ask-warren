@@ -208,6 +208,13 @@ class SecRagEvidenceProvider:
             if not results:
                 time.sleep(0.4)
                 results = self.vector.query(symbol, self.QUERY)
+            retrieval_backend = "upstash-hybrid"
+            if not results:
+                # A newly created namespace can take longer than the request
+                # budget to become queryable. Keep the first analysis grounded
+                # with the same bounded, materiality-ranked filing chunks.
+                results = chunks[:10]
+                retrieval_backend = "materiality-ranked-first-run-fallback"
         except Exception as exc:
             bundle.source_status.append(SourceStatus(source="SEC filing RAG", status="error", detail=f"{type(exc).__name__}: {exc}"))
             return bundle
@@ -236,6 +243,7 @@ class SecRagEvidenceProvider:
             "indexed_chunks": len(chunks),
             "retrieved_passages": len(seen),
             "strategy": "latest-and-prior annual/quarterly filings",
+            "retrieval_backend": retrieval_backend,
         }
         bundle.source_status.append(SourceStatus(source="SEC filing RAG", status="ok" if seen else "partial", detail=f"Retrieved {len(seen)} full-text passages from {len(filings)} filings."))
         return bundle

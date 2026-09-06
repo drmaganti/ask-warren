@@ -207,7 +207,7 @@ def _web_claim(group: list[WebEvidence]) -> EvidenceClaim:
     first = group[0]
     canonical = _canonical_url(first.url) or first.url
     authority = _web_authority(first.url)
-    is_sec_full_text = first.source == "SEC EDGAR full-text retrieval" and authority == 1
+    is_sec_full_text = first.source == "SEC EDGAR full-text retrieval" and bool(first.highlights)
     retrieval_depth = "full_text" if is_sec_full_text else "excerpt"
     highlights = [text.strip() for item in group for text in item.highlights if text.strip()]
     excerpt = highlights[0] if highlights else None
