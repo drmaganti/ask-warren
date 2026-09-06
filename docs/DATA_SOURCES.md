@@ -70,6 +70,8 @@ Important limitations:
 
 ## FRED
 
+This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis. Use of FRED data is subject to the [FRED API Terms of Use](https://fred.stlouisfed.org/docs/api/terms_of_use.html).
+
 Provider: `FredMacroEvidenceProvider`
 
 Official reference:
