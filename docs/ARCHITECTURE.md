@@ -182,7 +182,7 @@ Different evidence should have different TTL/event refresh policies:
 
 Persistent cross-instance caching is implemented through Upstash Redis. Event-driven invalidation remains a future enhancement; current invalidation is TTL- and evidence-fingerprint-based.
 
-SEC RAG remains separate from structured market data. On refresh, the provider downloads comparable primary filings, selects a bounded set of material sections, replaces that ticker's vector corpus, and retrieves full-text passages for the evidence router. Retrieved SEC passages receive authority tier 1 and `full_text` depth; ordinary web results remain excerpt-level evidence.
+SEC RAG remains separate from structured market data. On refresh, the provider downloads comparable primary filings, selects a bounded set of material sections, replaces that ticker's vector corpus, prunes inactive corpora after 30 days, and retrieves full-text passages for the evidence router. Retrieved SEC passages receive authority tier 1 and `full_text` depth; ordinary web results remain excerpt-level evidence.
 
 ## Failure behavior
 

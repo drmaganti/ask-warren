@@ -229,7 +229,7 @@ The Vercel Upstash integration supplies these variables automatically. `KV_REST_
 
 When `UPSTASH_VECTOR_REST_URL` and `UPSTASH_VECTOR_REST_TOKEN` are configured, Deep mode retrieves citation-ready passages from the latest and prior annual and quarterly SEC filings. Ask Warren downloads the primary SEC documents, retains a small set of material-risk and business-change chunks, replaces the ticker's prior vector corpus, and retrieves passages relevant to changes in risks, demand, competition, margins, liquidity, capital allocation and management outlook.
 
-The vector index uses Upstash-hosted embeddings, so no separate embedding API key is required. Each ticker corpus is replaced rather than appended, preventing superseded filings from accumulating indefinitely. RAG is not used for prices, ratios, technicals, estimates or macro observations; those remain structured source data.
+The vector index uses Upstash-hosted embeddings, so no separate embedding API key is required. Each ticker corpus is replaced rather than appended, and inactive ticker corpora are pruned after 30 days, preventing stale filings from consuming the free storage allowance. RAG is not used for prices, ratios, technicals, estimates or macro observations; those remain structured source data.
 
 ## Development
 

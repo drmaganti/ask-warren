@@ -4,6 +4,7 @@ import hashlib
 import html
 import os
 import re
+import time
 from html.parser import HTMLParser
 from typing import Any
 
@@ -68,6 +69,9 @@ class UpstashVectorClient:
         return body.get("result")
 
     def replace_ticker(self, ticker: str, chunks: list[dict[str, Any]]) -> None:
+        # Upstash Vector has no per-vector TTL. Prune inactive ticker corpora on
+        # every refresh so a free index cannot accumulate stale filings forever.
+        self._request("DELETE", "delete", {"filter": f"expires_at < {int(time.time())}"})
         self._request("DELETE", "delete", {"prefix": f"sec:{ticker}:"})
         if chunks:
             self._request("POST", "upsert-data", chunks)
@@ -100,6 +104,7 @@ class SecRagEvidenceProvider:
         "strategy", "outlook", "guidance", "supplier", "customer concentration",
         "cybersecurity", "regulation", "impairment", "restructuring",
     )
+    CORPUS_TTL_SECONDS = 30 * 24 * 60 * 60
 
     def __init__(
         self,
@@ -166,6 +171,7 @@ class SecRagEvidenceProvider:
         selected_indexes = sorted({*lead_indexes, *(index for index, _ in ranked[: self.max_chunks_per_filing])})
         chunks = [all_chunks[index] for index in selected_indexes[: self.max_chunks_per_filing]]
         accession = filing.accession_number or "unknown"
+        expires_at = int(time.time()) + self.CORPUS_TTL_SECONDS
         return [
             {
                 "id": f"sec:{ticker}:{accession}:{index}",
@@ -177,6 +183,7 @@ class SecRagEvidenceProvider:
                     "filed_at": filing.filed_at.isoformat() if filing.filed_at else None,
                     "url": filing.url,
                     "chunk": index,
+                    "expires_at": expires_at,
                 },
             }
             for index, chunk in enumerate(chunks)
@@ -195,6 +202,12 @@ class SecRagEvidenceProvider:
             chunks = [chunk for filing in filings for chunk in self._download_chunks(symbol, filing)]
             self.vector.replace_ticker(symbol, chunks)
             results = self.vector.query(symbol, self.QUERY)
+            # The hosted index is eventually consistent immediately after an
+            # upsert. One short retry prevents an empty first result from being
+            # cached for the six-hour SEC freshness window.
+            if not results:
+                time.sleep(0.4)
+                results = self.vector.query(symbol, self.QUERY)
         except Exception as exc:
             bundle.source_status.append(SourceStatus(source="SEC filing RAG", status="error", detail=f"{type(exc).__name__}: {exc}"))
             return bundle
