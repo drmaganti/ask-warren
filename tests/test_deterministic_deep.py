@@ -3,7 +3,16 @@ from __future__ import annotations
 import pytest
 
 from warren.deep import DeterministicDeepAnalysisProvider
-from warren.models import CategoryScores, EvidenceBundle, MetricComparison, MetricSnapshot, SourceStatus
+from warren.models import (
+    CategoryScores,
+    EstimateRevisionEvidence,
+    EvidenceBundle,
+    EvidenceClaim,
+    EvidenceReference,
+    MetricComparison,
+    MetricSnapshot,
+    SourceStatus,
+)
 
 
 @pytest.mark.asyncio
@@ -43,7 +52,30 @@ async def test_deterministic_provider_returns_public_verdict_vocabulary():
         market_context=65,
         overall=78,
     )
-    evidence = EvidenceBundle(source_status=[SourceStatus(source="Yahoo Finance", status="ok")])
+    estimate_claim = EvidenceClaim(
+        id="estimate_revision:test",
+        category="estimate_revision",
+        claim="Current-year consensus estimates increased.",
+        authority_tier=2,
+        retrieval_depth="structured",
+        confidence="high",
+        references=[EvidenceReference(source="Yahoo Finance", authority_tier=2, retrieval_depth="structured")],
+        metadata={"horizon": "0y"},
+    )
+    evidence = EvidenceBundle(
+        estimate_revisions=[EstimateRevisionEvidence(
+            horizon="0y",
+            analyst_count=20,
+            eps_current=5.50,
+            eps_30d_ago=5.00,
+            eps_up_30d=12,
+            eps_down_30d=1,
+            earnings_growth=0.14,
+            revenue_growth=-0.02,
+        )],
+        claims=[estimate_claim],
+        source_status=[SourceStatus(source="Yahoo Finance", status="ok")],
+    )
 
     analysis, model = await provider.analyze(metrics, scores, evidence)
 
@@ -57,6 +89,9 @@ async def test_deterministic_provider_returns_public_verdict_vocabulary():
     assert all("scores " not in item.lower() for item in analysis.bull_case + analysis.bear_case)
     assert all("above average" not in item.lower() for item in analysis.bull_case + analysis.bear_case)
     assert any("Why it matters:" in item for item in analysis.bull_case)
+    assert any("Earnings expectations are improving" in item for item in analysis.bull_case)
+    assert any("Near-term demand expectations remain soft" in item for item in analysis.bear_case)
+    assert {citation.section for citation in analysis.citations} == {"bull_case", "bear_case"}
     assert "/100" not in analysis.thesis
     assert analysis.bear_case
     assert model == "deterministic-v1.1"

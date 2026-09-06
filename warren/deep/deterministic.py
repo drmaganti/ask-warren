@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..models import CategoryScores, DeepAnalysis, EvidenceBundle, MetricSnapshot
+from ..models import AnalysisCitation, CategoryScores, DeepAnalysis, EvidenceBundle, MetricSnapshot
 
 
 class DeterministicDeepAnalysisProvider:
@@ -289,6 +289,67 @@ class DeterministicDeepAnalysisProvider:
                 )
         return supportive, cautious
 
+    @classmethod
+    def _forward_estimate_context(
+        cls, evidence: EvidenceBundle
+    ) -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
+        """Turn structured consensus data into sourced forward-looking arguments."""
+        bullish: list[tuple[str, str]] = []
+        bearish: list[tuple[str, str]] = []
+        horizon_labels = {
+            "0q": "the current quarter",
+            "+1q": "the next quarter",
+            "0y": "the current year",
+            "+1y": "the next year",
+        }
+        claim_by_horizon = {
+            claim.metadata.get("horizon"): claim.id
+            for claim in evidence.claims
+            if claim.category == "estimate_revision" and claim.metadata.get("horizon")
+        }
+
+        for item in evidence.estimate_revisions:
+            claim_id = claim_by_horizon.get(item.horizon)
+            if not claim_id:
+                continue
+            label = horizon_labels.get(item.horizon, item.horizon)
+            estimate_parts: list[str] = []
+            if item.revenue_growth is not None:
+                estimate_parts.append(f"revenue growth of {cls._pct(item.revenue_growth)}")
+            if item.earnings_growth is not None:
+                estimate_parts.append(f"earnings growth of {cls._pct(item.earnings_growth)}")
+            revision_text = None
+            revision_change = None
+            if item.eps_current is not None and item.eps_30d_ago not in (None, 0):
+                revision_change = item.eps_current / item.eps_30d_ago - 1
+                revision_text = (
+                    f"the consensus EPS estimate moved {abs(revision_change) * 100:.1f}% "
+                    f"{'higher' if revision_change >= 0 else 'lower'} over the past 30 days"
+                )
+            breadth_text = None
+            if item.eps_up_30d is not None or item.eps_down_30d is not None:
+                breadth_text = (
+                    f"{item.eps_up_30d or 0} analysts raised estimates and "
+                    f"{item.eps_down_30d or 0} lowered them"
+                )
+
+            details = "; ".join(estimate_parts + [x for x in (revision_text, breadth_text) if x])
+            if not details:
+                continue
+            if revision_change is not None and revision_change >= 0.02:
+                bullish.append((
+                    f"Earnings expectations are improving: for {label}, analysts report {details}. "
+                    "Why it matters: rising estimates suggest that expected future earnings have improved, although estimates can still change.",
+                    claim_id,
+                ))
+            if item.revenue_growth is not None and item.revenue_growth < 0:
+                bearish.append((
+                    f"Near-term demand expectations remain soft: for {label}, analysts report {details}. "
+                    "Why it matters: earnings improvement is harder to sustain when expected revenue is contracting rather than expanding.",
+                    claim_id,
+                ))
+        return bullish, bearish
+
     async def analyze(
         self,
         metrics: MetricSnapshot,
@@ -335,15 +396,16 @@ class DeterministicDeepAnalysisProvider:
 
         technical_support, technical_caution = self._technical_context(evidence)
         insider_support, insider_caution = self._insider_context(evidence)
+        forward_support, forward_caution = self._forward_estimate_context(evidence)
 
-        bull_case = positives[:3]
+        bull_case = [item for item, _ in forward_support[:1]] + positives[:2]
         bull_case.extend(technical_support[:1])
         if len(bull_case) < 4:
             bull_case.extend(insider_support[: 4 - len(bull_case)])
         if len(bull_case) < 4 and evidence.estimate_revisions:
             bull_case.append("Analyst estimate/revision evidence is available for review in the evidence packet.")
 
-        bear_case = concerns[:3]
+        bear_case = [item for item, _ in forward_caution[:1]] + concerns[:2]
         bear_case.extend(technical_caution[:1])
         if len(bear_case) < 4:
             bear_case.extend(insider_caution[: 4 - len(bear_case)])
@@ -359,6 +421,12 @@ class DeterministicDeepAnalysisProvider:
         if not evidence.news and len(risks) < 5:
             risks.append("No recent headline evidence is available in the current packet.")
         risks = risks[:5]
+
+        citations: list[AnalysisCitation] = []
+        if forward_support:
+            citations.append(AnalysisCitation(section="bull_case", item_index=0, claim_ids=[forward_support[0][1]]))
+        if forward_caution:
+            citations.append(AnalysisCitation(section="bear_case", item_index=0, claim_ids=[forward_caution[0][1]]))
 
         if verdict == "attractive":
             thesis = (
@@ -404,6 +472,7 @@ class DeterministicDeepAnalysisProvider:
                 what_would_change_view=changes,
                 verdict=verdict,
                 confidence=confidence,
+                citations=citations,
             ),
             "deterministic-v1.1",
         )

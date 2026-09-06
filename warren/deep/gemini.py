@@ -67,7 +67,10 @@ class GeminiDeepAnalysisProvider:
             "Bull Case, Bear Case or risks. Scores are internal decision aids, not investor-facing evidence. Each Bull Case and "
             "Bear Case item must lead with a specific finding, give the relevant metrics or evidence, compare with the previous "
             "quarter and same quarter last year when compatible comparisons exist, and explain why the finding matters to an "
-            "investor. Never invent an industry or peer benchmark."
+            "investor. Include the strongest supported forward-demand or future-earnings argument on each side using analyst "
+            "estimates and revisions, management guidance, demand indicators, capacity/investment plans or industry-demand "
+            "evidence when available. State the condition that must hold for the future claim to be true. Never invent an "
+            "industry or peer benchmark."
         )
 
         final_prompt = f"""You are Warren's investment research evaluator. {shared}
