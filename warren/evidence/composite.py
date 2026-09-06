@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
+
 from ..models import EvidenceBundle, MetricSnapshot, SourceStatus
 from ..protocols import EvidenceProvider
 
@@ -17,9 +19,17 @@ class CompositeEvidenceProvider:
 
     def fetch_evidence(self, ticker: str, metrics: MetricSnapshot) -> EvidenceBundle:
         bundle = EvidenceBundle()
-        for provider in self.providers:
+        if not self.providers:
+            return bundle
+
+        # Providers are independent network sources. Fetch them concurrently so
+        # one slow upstream does not consume the entire serverless request window.
+        with ThreadPoolExecutor(max_workers=len(self.providers)) as executor:
+            futures = [executor.submit(provider.fetch_evidence, ticker, metrics) for provider in self.providers]
+
+        for provider, future in zip(self.providers, futures, strict=True):
             try:
-                bundle = bundle.merge(provider.fetch_evidence(ticker, metrics))
+                bundle = bundle.merge(future.result())
             except Exception as exc:
                 bundle.source_status.append(
                     SourceStatus(
