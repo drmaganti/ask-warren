@@ -25,7 +25,11 @@ class GeminiDeepAnalysisProvider:
             "generationConfig": {"temperature": 0.15, "responseMimeType": "application/json"},
         }
         async with httpx.AsyncClient(timeout=45) as client:
-            response = await client.post(url, params={"key": self.api_key}, json=body)
+            response = await client.post(
+                url,
+                headers={"x-goog-api-key": self.api_key},
+                json=body,
+            )
             response.raise_for_status()
             payload = response.json()
         text = payload["candidates"][0]["content"]["parts"][0]["text"]
