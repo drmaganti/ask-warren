@@ -221,7 +221,7 @@ Concurrent requests for the same cache key share a single upstream fetch. Indepe
 
 Deterministic results produced as a fallback after a transient Gemini failure are not cached, allowing the next request to retry Gemini instead of preserving a degraded response.
 
-When `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are configured, fresh entries survive Vercel cold starts and deployments. A bounded last-known copy is retained for seven days and is used only if an authoritative market or evidence provider temporarily fails. Redis errors never prevent analysis: the application falls back to its local cache and live providers. Without Redis configuration, the same code operates as a warm-instance memory cache.
+When `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are configured, fresh entries survive Vercel cold starts and deployments. Every Redis entry has the same source-specific TTL shown above and Redis automatically deletes it at expiry; no stale duplicate is retained. Redis errors never prevent analysis: the application falls back to its local cache and live providers. Without Redis configuration, the same code operates as a warm-instance memory cache.
 
 The Vercel Upstash integration supplies these variables automatically. `KV_REST_API_URL` and `KV_REST_API_TOKEN` are also accepted for compatibility. Keep all Redis credentials server-side and out of Git.
 

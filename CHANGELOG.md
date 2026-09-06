@@ -5,7 +5,7 @@ All notable product/module changes should be recorded here.
 ## Unreleased
 
 - Optional Upstash Redis persistence for market data, source evidence and successful Gemini analyses across Vercel cold starts and deployments.
-- Seven-day bounded last-known evidence fallback for temporary upstream failures, while normal freshness remains governed by source-specific TTLs.
+- Automatic Redis deletion at each source-specific TTL, with no retained stale duplicate.
 - Graceful memory/live-source fallback when Redis is not configured or temporarily unavailable.
 
 - Fall back to deterministic synthesis when Gemini is unavailable or its free quota is exhausted.

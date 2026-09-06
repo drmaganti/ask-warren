@@ -147,4 +147,4 @@ def test_persistent_cache_survives_a_new_application_instance():
     )
 
     assert second.get("AAPL") == {"price": 100}
-    assert second.get_stale("AAPL") == {"price": 100}
+    assert list(store.items) == ["ask-warren:v1:test:AAPL:fresh"]

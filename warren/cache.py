@@ -102,19 +102,16 @@ class PersistentTTLCache(Generic[V]):
         encode: Callable[[V], Any],
         decode: Callable[[Any], V],
         store: RedisJSONStore | None = None,
-        stale_seconds: int = 604800,
     ):
         self.namespace = namespace
         self.ttl_seconds = max(1, int(ttl_seconds))
-        self.stale_seconds = max(self.ttl_seconds, stale_seconds)
         self.encode = encode
         self.decode = decode
         self.store = store if store is not None else RedisJSONStore.from_env()
         self.memory: TTLCache[str, V] = TTLCache(ttl_seconds)
 
-    def _key(self, key: str, stale: bool = False) -> str:
-        suffix = "stale" if stale else "fresh"
-        return f"ask-warren:v1:{self.namespace}:{key}:{suffix}"
+    def _key(self, key: str) -> str:
+        return f"ask-warren:v1:{self.namespace}:{key}:fresh"
 
     def _decode(self, envelope: dict[str, Any] | None) -> V | None:
         if not envelope:
@@ -135,11 +132,6 @@ class PersistentTTLCache(Generic[V]):
             self.memory.set(key, value)
         return value
 
-    def get_stale(self, key: str) -> V | None:
-        if self.store is None:
-            return None
-        return self._decode(self.store.get(self._key(key, stale=True)))
-
     def set(self, key: str, value: V) -> None:
         self.memory.set(key, value)
         if self.store is None:
@@ -149,7 +141,6 @@ class PersistentTTLCache(Generic[V]):
             "value": self.encode(value),
         }
         self.store.set(self._key(key), envelope, self.ttl_seconds)
-        self.store.set(self._key(key, stale=True), envelope, self.stale_seconds)
 
 
 def _model_encoder(value: Any) -> Any:
@@ -176,13 +167,7 @@ class CachedMarketDataProvider:
             cached = self.cache.get(key)
             if cached is not None:
                 return cached
-            try:
-                value = self.upstream.fetch_metrics(key)
-            except Exception:
-                stale = self.cache.get_stale(key)
-                if stale is not None:
-                    return stale
-                raise
+            value = self.upstream.fetch_metrics(key)
             self.cache.set(key, value)
             return value
 
@@ -214,18 +199,7 @@ class CachedEvidenceProvider:
             cached = self.cache.get(key)
             if cached is not None:
                 return cached
-            try:
-                value = self.upstream.fetch_evidence(ticker, metrics)
-            except Exception:
-                stale = self.cache.get_stale(key)
-                if stale is not None:
-                    stale.metadata = {
-                        **stale.metadata,
-                        "cache_freshness": "stale",
-                        "cache_reason": "live source refresh failed",
-                    }
-                    return stale
-                raise
+            value = self.upstream.fetch_evidence(ticker, metrics)
             self.cache.set(key, value)
             return value
 

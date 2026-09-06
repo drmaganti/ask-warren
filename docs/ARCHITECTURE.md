@@ -162,7 +162,7 @@ Warren -> a specific UI
 - FRED is optional and adds no LLM call.
 - Runtime caching separately stores market snapshots, SEC evidence, Yahoo evidence, Exa results, global FRED observations and final analyses because they have different freshness requirements.
 - The cache is memory-first and optionally backed by Upstash Redis. Redis entries retain the same source-specific TTLs, so persistence across cold starts does not weaken freshness.
-- A last-known copy is retained for seven days and is used only when a live market or evidence refresh fails. If Redis is missing or unavailable, providers continue through the local cache and authoritative sources.
+- Redis applies the source TTL directly to every key and deletes the key automatically at expiry. No stale duplicate is retained. If Redis is missing or unavailable, providers continue through the local cache and authoritative sources.
 - Per-key request coalescing prevents simultaneous requests for the same ticker or global macro bundle from duplicating upstream work.
 - Gemini results are keyed by normalized metrics, deterministic scores and the evidence fingerprint, so a changed input cannot reuse an old synthesis.
 - A deterministic fallback caused by a transient Gemini failure is returned safely but not stored in the synthesis cache.
