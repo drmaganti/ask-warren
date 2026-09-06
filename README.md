@@ -212,7 +212,7 @@ Ask Warren avoids unnecessary upstream requests with a two-level cache: fast in-
 |---|---:|---|
 | Yahoo market snapshot | 5 minutes | ticker |
 | Yahoo evidence | 15 minutes | ticker |
-| SEC filings and facts | 1 hour | ticker |
+| SEC filings, facts and RAG passages | 6 hours | ticker |
 | Exa web discovery | 2 hours | ticker |
 | FRED macro observations | 6 hours | global (shared by every ticker) |
 | Gemini synthesis | 30 minutes | metrics + scores + evidence fingerprint |
@@ -224,6 +224,12 @@ Deterministic results produced as a fallback after a transient Gemini failure ar
 When `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are configured, fresh entries survive Vercel cold starts and deployments. Every Redis entry has the same source-specific TTL shown above and Redis automatically deletes it at expiry; no stale duplicate is retained. Redis errors never prevent analysis: the application falls back to its local cache and live providers. Without Redis configuration, the same code operates as a warm-instance memory cache.
 
 The Vercel Upstash integration supplies these variables automatically. `KV_REST_API_URL` and `KV_REST_API_TOKEN` are also accepted for compatibility. Keep all Redis credentials server-side and out of Git.
+
+### SEC filing RAG
+
+When `UPSTASH_VECTOR_REST_URL` and `UPSTASH_VECTOR_REST_TOKEN` are configured, Deep mode retrieves citation-ready passages from the latest and prior annual and quarterly SEC filings. Ask Warren downloads the primary SEC documents, retains a small set of material-risk and business-change chunks, replaces the ticker's prior vector corpus, and retrieves passages relevant to changes in risks, demand, competition, margins, liquidity, capital allocation and management outlook.
+
+The vector index uses Upstash-hosted embeddings, so no separate embedding API key is required. Each ticker corpus is replaced rather than appended, preventing superseded filings from accumulating indefinitely. RAG is not used for prices, ratios, technicals, estimates or macro observations; those remain structured source data.
 
 ## Development
 

@@ -15,6 +15,7 @@ from warren.evidence import (
     ExaWebEvidenceProvider,
     FredMacroEvidenceProvider,
     SecFilingEvidenceProvider,
+    SecRagEvidenceProvider,
     YahooEvidenceProvider,
 )
 from warren.providers import YFinanceMarketDataProvider
@@ -35,8 +36,11 @@ def _deep_provider():
 
 
 def _evidence_providers():
+    sec_provider = SecFilingEvidenceProvider()
+    if os.getenv("UPSTASH_VECTOR_REST_URL") and os.getenv("UPSTASH_VECTOR_REST_TOKEN"):
+        sec_provider = SecRagEvidenceProvider(sec_provider)
     providers = [
-        CachedEvidenceProvider(SecFilingEvidenceProvider(), ttl_seconds=3600),
+        CachedEvidenceProvider(sec_provider, ttl_seconds=21600),
         CachedEvidenceProvider(YahooEvidenceProvider(), ttl_seconds=900),
         CachedEvidenceProvider(FredMacroEvidenceProvider(), ttl_seconds=21600, key=lambda ticker, metrics: "global"),
     ]
@@ -79,6 +83,9 @@ def health() -> dict[str, str]:
             (os.getenv("UPSTASH_REDIS_REST_URL") and os.getenv("UPSTASH_REDIS_REST_TOKEN"))
             or (os.getenv("KV_REST_API_URL") and os.getenv("KV_REST_API_TOKEN"))
         ) else "memory",
+        "rag": "sec-filings-upstash-vector" if (
+            os.getenv("UPSTASH_VECTOR_REST_URL") and os.getenv("UPSTASH_VECTOR_REST_TOKEN")
+        ) else "disabled",
     }
 
 

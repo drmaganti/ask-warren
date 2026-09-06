@@ -187,6 +187,9 @@ Estimate revisions are intentionally not added to Screen until point-in-time/cal
 - [x] duplicate-request coalescing and parallel evidence collection;
 - [x] optional persistent cross-instance cache through Upstash Redis;
 - [ ] event-driven invalidation for material filings and earnings releases;
+- [x] SEC full-text RAG over latest and prior annual/quarterly filings;
+- [x] bounded per-ticker vector replacement to prevent stale corpus growth;
+- [ ] explicit filing-to-filing change extraction grouped by section;
 - [ ] event-driven invalidation after earnings/filings/material news;
 - [ ] retries/circuit breakers;
 - [ ] provider fallback;

@@ -4,6 +4,10 @@ All notable product/module changes should be recorded here.
 
 ## Unreleased
 
+- SEC filing RAG using Upstash Vector hosted embeddings, with primary-source full-text claims and citations.
+- Bounded latest/prior annual and quarterly filing corpora that replace older ticker vectors instead of accumulating them.
+- Material-section ranking to prioritize risks, demand, competition, margins, liquidity, capital allocation and outlook.
+
 - Optional Upstash Redis persistence for market data, source evidence and successful Gemini analyses across Vercel cold starts and deployments.
 - Automatic Redis deletion at each source-specific TTL, with no retained stale duplicate.
 - Graceful memory/live-source fallback when Redis is not configured or temporarily unavailable.

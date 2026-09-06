@@ -58,6 +58,7 @@ Current providers:
 - `SecFilingEvidenceProvider` — recent SEC filing metadata from official SEC endpoints;
 - `YahooEvidenceProvider` — recent headlines, EPS/revenue estimates and revisions, and recent earnings surprise history;
 - `FredMacroEvidenceProvider` — optional macro observations when `FRED_API_KEY` is configured.
+- `SecRagEvidenceProvider` — optional full-text retrieval over the latest and prior annual/quarterly SEC filings using Upstash Vector hosted embeddings.
 
 The evidence packet also carries `source_status` entries (`ok`, `partial`, `unavailable`, `error`) so the model and client can reason about evidence quality explicitly.
 
@@ -180,6 +181,8 @@ Different evidence should have different TTL/event refresh policies:
 - Deep synthesis: invalidated by material evidence changes.
 
 Persistent cross-instance caching is implemented through Upstash Redis. Event-driven invalidation remains a future enhancement; current invalidation is TTL- and evidence-fingerprint-based.
+
+SEC RAG remains separate from structured market data. On refresh, the provider downloads comparable primary filings, selects a bounded set of material sections, replaces that ticker's vector corpus, and retrieves full-text passages for the evidence router. Retrieved SEC passages receive authority tier 1 and `full_text` depth; ordinary web results remain excerpt-level evidence.
 
 ## Failure behavior
 

@@ -8,6 +8,7 @@ from warren.evidence import (
     ExaWebEvidenceProvider,
     FredMacroEvidenceProvider,
     SecFilingEvidenceProvider,
+    SecRagEvidenceProvider,
 )
 from warren.models import (
     EvidenceBundle,
@@ -93,6 +94,36 @@ class DuplicateNewsProvider:
             ],
             source_status=[SourceStatus(source="test", status="ok")],
         )
+
+
+class RagSecProvider:
+    def fetch_evidence(self, ticker, metrics):
+        return EvidenceBundle(
+            filings=[
+                FilingEvidence(form="10-Q", filed_at=date(2026, 7, 31), accession_number="new", url="https://www.sec.gov/new.htm"),
+                FilingEvidence(form="10-Q", filed_at=date(2026, 4, 30), accession_number="prior", url="https://www.sec.gov/prior.htm"),
+            ]
+        )
+
+
+class FakeVector:
+    def __init__(self):
+        self.replaced = None
+
+    def replace_ticker(self, ticker, chunks):
+        self.replaced = (ticker, chunks)
+
+    def query(self, ticker, query):
+        return [{
+            "id": "sec:AAPL:new:0",
+            "data": "Risk factors now identify increased supplier concentration.",
+            "metadata": {"form": "10-Q", "filed_at": "2026-07-31", "url": "https://www.sec.gov/new.htm"},
+        }]
+
+
+class StubRagProvider(SecRagEvidenceProvider):
+    def _download_chunks(self, ticker, filing):
+        return [{"id": f"sec:{ticker}:{filing.accession_number}:0", "data": "filing text", "metadata": {"ticker": ticker}}]
 
 
 def test_composite_preserves_good_evidence_when_one_source_fails():
@@ -205,3 +236,19 @@ def test_sec_extracts_latest_structured_xbrl_facts():
     assert facts[0].value == 100
     assert facts[0].period_end == date(2026, 6, 30)
     assert facts[0].source == "SEC EDGAR XBRL"
+
+
+def test_sec_rag_replaces_ticker_corpus_and_returns_primary_passages():
+    vector = FakeVector()
+    provider = StubRagProvider(RagSecProvider(), vector=vector)
+
+    bundle = EvidenceRouter(provider).fetch_evidence("AAPL", MetricSnapshot(ticker="AAPL"))
+
+    assert vector.replaced[0] == "AAPL"
+    assert len(vector.replaced[1]) == 2
+    assert bundle.metadata["sec_rag"]["retrieved_passages"] == 1
+    claim = next(item for item in bundle.claims if item.category == "web")
+    assert claim.authority_tier == 1
+    assert claim.retrieval_depth == "full_text"
+    assert claim.confidence == "high"
+    assert claim.metadata["excerpt_only"] is False
