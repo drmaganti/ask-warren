@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import UTC, date, datetime
 
 from warren.evidence import (
     AlphaVantageEarningsCallProvider,
@@ -214,6 +214,15 @@ class StubEarningsCallProvider(AlphaVantageEarningsCallProvider):
             {"speaker": "C. Executive", "title": "Chief Financial Officer", "content": "We expect transaction growth and sales leverage, while labor investment continues."},
             {"speaker": "B. Analyst", "title": "Research Analyst", "content": "Thank you."},
         ]}
+
+
+def test_earnings_call_quarter_probe_includes_prior_year():
+    quarters = AlphaVantageEarningsCallProvider._quarters(datetime(2026, 9, 1, tzinfo=UTC))
+
+    assert quarters == [
+        "2026Q4", "2026Q3", "2026Q2", "2026Q1",
+        "2025Q4", "2025Q3", "2025Q2", "2025Q1",
+    ]
 
 
 def test_earnings_call_provider_extracts_material_qa_and_router_cites_it():

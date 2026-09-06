@@ -18,7 +18,7 @@ class AlphaVantageEarningsCallProvider:
 
     ENDPOINT = "https://www.alphavantage.co/query"
     SOURCE_URL = "https://www.alphavantage.co/documentation/#earnings-call-transcript"
-    cache_namespace = "alpha-vantage-earnings-calls-v1"
+    cache_namespace = "alpha-vantage-earnings-calls-v2"
     MATERIAL_TERMS = (
         "guidance", "demand", "traffic", "volume", "pricing", "price", "margin",
         "cost", "investment", "return", "growth", "revenue", "earnings", "cash flow",
@@ -33,9 +33,15 @@ class AlphaVantageEarningsCallProvider:
     @staticmethod
     def _quarters(now: datetime | None = None) -> list[str]:
         today = now or datetime.now(UTC)
-        # Fiscal calendars differ, so probe the current year's fiscal labels in
-        # descending order and stop after the first transcript is found.
-        return [f"{today.year}Q{quarter}" for quarter in (4, 3, 2, 1)]
+        # Fiscal calendars and provider publication dates differ. Probe the
+        # current year first, then the prior year, stopping as soon as a call is
+        # found. The result is cached for a week, so this fallback does not
+        # repeatedly consume the free API allowance.
+        return [
+            f"{year}Q{quarter}"
+            for year in (today.year, today.year - 1)
+            for quarter in (4, 3, 2, 1)
+        ]
 
     def _request(self, ticker: str, quarter: str) -> dict[str, Any]:
         response = httpx.get(
