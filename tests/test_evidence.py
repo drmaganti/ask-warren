@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import date
 
 from warren.evidence import (
+    AlphaVantageEarningsCallProvider,
     CompositeEvidenceProvider,
     EvidenceRouter,
     ExaWebEvidenceProvider,
@@ -198,6 +199,45 @@ def test_fred_without_key_degrades_to_unavailable(monkeypatch):
 
     assert bundle.macro == []
     assert bundle.source_status[0].source == "FRED"
+    assert bundle.source_status[0].status == "unavailable"
+
+
+class StubEarningsCallProvider(AlphaVantageEarningsCallProvider):
+    @staticmethod
+    def _quarters(now=None):
+        return ["2026Q3"]
+
+    def _request(self, ticker, quarter):
+        return {"transcript": [
+            {"speaker": "Operator", "title": "Operator", "content": "We will begin the question-and-answer session."},
+            {"speaker": "A. Analyst", "title": "Research Analyst", "content": "What demand and margin assumptions support guidance?"},
+            {"speaker": "C. Executive", "title": "Chief Financial Officer", "content": "We expect transaction growth and sales leverage, while labor investment continues."},
+            {"speaker": "B. Analyst", "title": "Research Analyst", "content": "Thank you."},
+        ]}
+
+
+def test_earnings_call_provider_extracts_material_qa_and_router_cites_it():
+    provider = StubEarningsCallProvider(api_key="test")
+    raw = provider.fetch_evidence("TEST", MetricSnapshot(ticker="TEST"))
+
+    assert len(raw.earnings_call_qa) == 1
+    assert raw.earnings_call_qa[0].analyst == "A. Analyst"
+    assert "transaction growth" in raw.earnings_call_qa[0].answer
+    assert raw.metadata["earnings_call"]["raw_transcript_retained"] is False
+
+    routed = EvidenceRouter(provider).fetch_evidence("TEST", MetricSnapshot(ticker="TEST"))
+    claim = next(item for item in routed.claims if item.category == "earnings_call")
+    assert "What demand and margin assumptions" in claim.claim
+    assert claim.references[0].url
+
+
+def test_earnings_call_provider_without_key_degrades_to_unavailable(monkeypatch):
+    monkeypatch.delenv("ALPHA_VANTAGE_API_KEY", raising=False)
+    provider = AlphaVantageEarningsCallProvider(api_key=None)
+
+    bundle = provider.fetch_evidence("AAPL", MetricSnapshot(ticker="AAPL"))
+
+    assert bundle.earnings_call_qa == []
     assert bundle.source_status[0].status == "unavailable"
 
 

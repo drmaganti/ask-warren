@@ -10,6 +10,7 @@ from warren.cache import CachedDeepAnalysisProvider, CachedEvidenceProvider, Cac
 from warren.deep import DeterministicDeepAnalysisProvider, GeminiDeepAnalysisProvider, ResilientDeepAnalysisProvider
 from warren.engine import Warren
 from warren.evidence import (
+    AlphaVantageEarningsCallProvider,
     CompositeEvidenceProvider,
     EvidenceRouter,
     ExaWebEvidenceProvider,
@@ -46,6 +47,8 @@ def _evidence_providers():
     ]
     if os.getenv("EXA_API_KEY"):
         providers.append(CachedEvidenceProvider(ExaWebEvidenceProvider(), ttl_seconds=7200))
+    if os.getenv("ALPHA_VANTAGE_API_KEY"):
+        providers.append(CachedEvidenceProvider(AlphaVantageEarningsCallProvider(), ttl_seconds=604800))
     return providers
 
 
@@ -59,7 +62,7 @@ engine = Warren(
 
 app = FastAPI(
     title="Ask Warren Stock Intelligence",
-    version="0.4.2",
+    version="0.5.0",
     description="Standalone stock research experience powered by the reusable Warren engine.",
 )
 
@@ -79,6 +82,7 @@ def health() -> dict[str, str]:
         "deep_provider": "gemini" if os.getenv("GEMINI_API_KEY") else "deterministic-v1.1",
         "evidence_router": EvidenceRouter.VERSION,
         "web_discovery": "exa" if os.getenv("EXA_API_KEY") else "disabled",
+        "earnings_calls": "alpha-vantage" if os.getenv("ALPHA_VANTAGE_API_KEY") else "disabled",
         "cache": "persistent-redis" if (
             (os.getenv("UPSTASH_REDIS_REST_URL") and os.getenv("UPSTASH_REDIS_REST_TOKEN"))
             or (os.getenv("KV_REST_API_URL") and os.getenv("KV_REST_API_TOKEN"))

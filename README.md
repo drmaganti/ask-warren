@@ -199,6 +199,9 @@ export GEMINI_MODEL="gemini-3.6-flash"
 # Optional macro evidence. Deep continues without it when absent.
 export FRED_API_KEY="..."
 
+# Optional: latest earnings-call analyst Q&A (free development key available).
+export ALPHA_VANTAGE_API_KEY="..."
+
 # Recommended for production automated SEC access.
 export SEC_USER_AGENT="AskWarren/0.4 contact@example.com"
 ```
@@ -217,6 +220,7 @@ Ask Warren avoids unnecessary upstream requests with a two-level cache: fast in-
 | Exa web discovery | 2 hours | ticker |
 | FRED macro observations | 6 hours | global (shared by every ticker) |
 | Gemini synthesis | 30 minutes | metrics + scores + evidence fingerprint |
+| Earnings-call analyst Q&A | 7 days | ticker |
 
 Concurrent requests for the same cache key share a single upstream fetch. Independent evidence providers are fetched in parallel. Cached models are copied on read and write so request-level normalization cannot mutate cached source data.
 
@@ -225,6 +229,8 @@ Deterministic results produced as a fallback after a transient Gemini failure ar
 Bull and Bear sections lead with investor-facing findings rather than category scores. Each argument states the observed evidence, explains why it matters and, where compatible quarterly history is available, compares revenue, net income, operating cash flow, free cash flow, gross margin and operating margin with both the previous quarter and the same quarter one year earlier. Margin changes are expressed in percentage points; dollar measures are expressed as percentage changes. Ask Warren does not display an industry or peer average unless the data provider supplies a defined, comparable peer group, so a missing comparison is preferable to a misleading one.
 
 Forward-looking Bull and Bear arguments use structured analyst growth expectations, estimate changes and revision breadth, plus retrieved guidance and demand evidence when available. Supported arguments carry a source link in the analysis. The detailed supporting evidence, SEC-reported fundamentals and filing/research passages remain available in collapsed sections at the end of the page so the primary conclusion stays readable without hiding its evidence trail.
+
+When `ALPHA_VANTAGE_API_KEY` is configured, Deep mode also retrieves the newest available earnings-call transcript through a bounded fiscal-quarter search. Only material analyst questions and short management-answer excerpts are retained; the raw transcript is not stored. The analysis model may use these excerpts to identify the concern behind a question, assess whether the response addressed it, and connect the exchange to future demand, earnings or execution risk. Transcript evidence is cached for seven days to stay within the free API allowance. Confirm licensing before using third-party transcript content in a commercial offering.
 
 When `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are configured, fresh entries survive Vercel cold starts and deployments. Every Redis entry has the same source-specific TTL shown above and Redis automatically deletes it at expiry; no stale duplicate is retained. Redis errors never prevent analysis: the application falls back to its local cache and live providers. Without Redis configuration, the same code operates as a warm-instance memory cache.
 

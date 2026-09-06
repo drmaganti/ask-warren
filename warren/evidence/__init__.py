@@ -1,4 +1,5 @@
 from .composite import CompositeEvidenceProvider
+from .earnings_calls import AlphaVantageEarningsCallProvider
 from .exa import ExaWebEvidenceProvider
 from .fred import FredMacroEvidenceProvider
 from .router import EvidenceRouter, normalize_claims
@@ -8,6 +9,7 @@ from .yahoo import YahooEvidenceProvider
 
 __all__ = [
     "CompositeEvidenceProvider",
+    "AlphaVantageEarningsCallProvider",
     "EvidenceRouter",
     "ExaWebEvidenceProvider",
     "FredMacroEvidenceProvider",

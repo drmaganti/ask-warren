@@ -72,7 +72,9 @@ class GeminiDeepAnalysisProvider:
             "investor. Include the strongest supported forward-demand or future-earnings argument on each side using analyst "
             "estimates and revisions, management guidance, demand indicators, capacity/investment plans or industry-demand "
             "evidence when available. State the condition that must hold for the future claim to be true. Never invent an "
-            "industry or peer benchmark."
+            "industry or peer benchmark. Treat earnings_call claims as Q&A excerpts: identify the analyst's underlying concern, "
+            "whether management answered it directly, and the implication for future demand or earnings. Do not infer honesty, "
+            "emotion or tone. Cite the earnings-call claim for every call-derived point."
         )
 
         final_prompt = f"""You are Warren's investment research evaluator. {shared}

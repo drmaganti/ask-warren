@@ -162,6 +162,18 @@ class EarningsHistoryEvidence(BaseModel):
     source: str = "Yahoo Finance"
 
 
+class EarningsCallQAEvidence(BaseModel):
+    quarter: str
+    analyst: str | None = None
+    analyst_title: str | None = None
+    question: str
+    responder: str | None = None
+    responder_title: str | None = None
+    answer: str
+    source_url: str = "https://www.alphavantage.co/documentation/#earnings-call-transcript"
+    source: str = "Alpha Vantage earnings-call transcript"
+
+
 class TechnicalEvidence(BaseModel):
     as_of: date | None = None
     close: float | None = None
@@ -209,7 +221,7 @@ class EvidenceReference(BaseModel):
 
 class EvidenceClaim(BaseModel):
     id: str
-    category: Literal["filing", "sec_fact", "news", "estimate_revision", "earnings", "technical", "insider", "macro", "web"]
+    category: Literal["filing", "sec_fact", "news", "estimate_revision", "earnings", "earnings_call", "technical", "insider", "macro", "web"]
     claim: str
     as_of: date | datetime | None = None
     authority_tier: Literal[1, 2, 3, 4, 5]
@@ -230,6 +242,7 @@ class EvidenceBundle(BaseModel):
     web: list[WebEvidence] = Field(default_factory=list)
     estimate_revisions: list[EstimateRevisionEvidence] = Field(default_factory=list)
     earnings_history: list[EarningsHistoryEvidence] = Field(default_factory=list)
+    earnings_call_qa: list[EarningsCallQAEvidence] = Field(default_factory=list)
     technical: list[TechnicalEvidence] = Field(default_factory=list)
     insider_transactions: list[InsiderTransactionEvidence] = Field(default_factory=list)
     macro: list[MacroEvidence] = Field(default_factory=list)
@@ -246,6 +259,7 @@ class EvidenceBundle(BaseModel):
             web=[*self.web, *other.web],
             estimate_revisions=[*self.estimate_revisions, *other.estimate_revisions],
             earnings_history=[*self.earnings_history, *other.earnings_history],
+            earnings_call_qa=[*self.earnings_call_qa, *other.earnings_call_qa],
             technical=[*self.technical, *other.technical],
             insider_transactions=[*self.insider_transactions, *other.insider_transactions],
             macro=[*self.macro, *other.macro],

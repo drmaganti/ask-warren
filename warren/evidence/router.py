@@ -9,6 +9,7 @@ from urllib.parse import urlsplit, urlunsplit
 
 from ..models import (
     EarningsHistoryEvidence,
+    EarningsCallQAEvidence,
     EstimateRevisionEvidence,
     EvidenceBundle,
     EvidenceClaim,
@@ -67,6 +68,7 @@ def _raw_item_count(bundle: EvidenceBundle) -> int:
         + len(bundle.web)
         + len(bundle.estimate_revisions)
         + len(bundle.earnings_history)
+        + len(bundle.earnings_call_qa)
         + len(bundle.technical)
         + len(bundle.insider_transactions)
         + len(bundle.macro)
@@ -278,6 +280,29 @@ def _earnings_claim(item: EarningsHistoryEvidence) -> EvidenceClaim:
     )
 
 
+def _earnings_call_claim(item: EarningsCallQAEvidence, index: int) -> EvidenceClaim:
+    analyst = item.analyst or "An analyst"
+    responder = item.responder or "Management"
+    return EvidenceClaim(
+        id=_stable_id("earnings_call", f"{item.quarter}:{analyst}:{index}"),
+        category="earnings_call",
+        claim=(
+            f"During the {item.quarter} earnings-call Q&A, {analyst} asked: {item.question} "
+            f"{responder} answered: {item.answer}"
+        ),
+        authority_tier=3,
+        retrieval_depth="excerpt",
+        confidence="medium",
+        references=[_reference(
+            item.source,
+            url=item.source_url,
+            authority_tier=3,
+            retrieval_depth="excerpt",
+        )],
+        metadata=item.model_dump(exclude_none=True, mode="json"),
+    )
+
+
 def _technical_claim(item: TechnicalEvidence) -> EvidenceClaim:
     as_of = item.as_of.isoformat() if item.as_of else "the latest trading day"
     parts = [f"Technical snapshot as of {as_of}."]
@@ -348,6 +373,7 @@ def normalize_claims(bundle: EvidenceBundle) -> tuple[list[EvidenceClaim], int]:
     claims.extend(_sec_fact_claim(item) for item in bundle.sec_facts)
     claims.extend(_estimate_claim(item) for item in bundle.estimate_revisions)
     claims.extend(_earnings_claim(item) for item in bundle.earnings_history)
+    claims.extend(_earnings_call_claim(item, idx) for idx, item in enumerate(bundle.earnings_call_qa))
     claims.extend(_technical_claim(item) for item in bundle.technical)
     claims.extend(_insider_claim(item, idx) for idx, item in enumerate(bundle.insider_transactions))
     claims.extend(_macro_claim(item) for item in bundle.macro)
