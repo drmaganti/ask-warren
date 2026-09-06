@@ -6,6 +6,20 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 
+class MetricComparison(BaseModel):
+    metric: str
+    label: str
+    unit: Literal["money", "percent"]
+    current: float
+    current_period: date | None = None
+    previous_quarter: float | None = None
+    previous_period: date | None = None
+    year_ago: float | None = None
+    year_ago_period: date | None = None
+    peer_median: float | None = None
+    peer_group: str | None = None
+
+
 class MetricSnapshot(BaseModel):
     ticker: str
     company_name: str | None = None
@@ -27,6 +41,7 @@ class MetricSnapshot(BaseModel):
     shares_outstanding: float | None = None
     fetched_at: datetime | None = None
     historical_free_cash_flow: list[float] = Field(default_factory=list)
+    quarterly_comparisons: list[MetricComparison] = Field(default_factory=list)
     revenue_growth: float | None = None
     earnings_growth: float | None = None
     gross_margin: float | None = None

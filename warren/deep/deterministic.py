@@ -20,6 +20,102 @@ class DeterministicDeepAnalysisProvider:
         return f"{value * 100:.1f}%"
 
     @staticmethod
+    def _money(value: float | None) -> str | None:
+        if value is None:
+            return None
+        absolute = abs(value)
+        if absolute >= 1_000_000_000:
+            return f"${value / 1_000_000_000:.1f}B"
+        if absolute >= 1_000_000:
+            return f"${value / 1_000_000:.1f}M"
+        return f"${value:,.0f}"
+
+    @classmethod
+    def _comparison_text(cls, metrics: MetricSnapshot, metric_name: str) -> str | None:
+        comparison = next(
+            (item for item in metrics.quarterly_comparisons if item.metric == metric_name),
+            None,
+        )
+        if comparison is None:
+            return None
+        current = cls._money(comparison.current) if comparison.unit == "money" else cls._pct(comparison.current)
+        changes: list[str] = []
+        for label, prior in (
+            ("last quarter", comparison.previous_quarter),
+            ("the same quarter last year", comparison.year_ago),
+        ):
+            if prior is None:
+                continue
+            if comparison.unit == "percent":
+                difference = (comparison.current - prior) * 100
+                changes.append(f"{abs(difference):.1f} percentage points {'above' if difference >= 0 else 'below'} {label}")
+            elif prior:
+                change = comparison.current / prior - 1
+                changes.append(f"{abs(change) * 100:.1f}% {'above' if change >= 0 else 'below'} {label}")
+        suffix = f" ({'; '.join(changes)})" if changes else ""
+        return f"{comparison.label.lower()} {current}{suffix}"
+
+    @classmethod
+    def _category_inputs(cls, label: str, metrics: MetricSnapshot) -> str:
+        fcf_yield = (
+            metrics.free_cash_flow / metrics.market_cap
+            if metrics.free_cash_flow is not None and metrics.market_cap and metrics.market_cap > 0
+            else None
+        )
+        inputs: dict[str, list[str | None]] = {
+            "fundamentals": [
+                f"free cash flow {cls._money(metrics.free_cash_flow)} ({'positive and supportive' if metrics.free_cash_flow > 0 else 'negative and a concern'})" if metrics.free_cash_flow is not None else None,
+                f"operating cash flow {cls._money(metrics.operating_cash_flow)} ({'positive and supportive' if metrics.operating_cash_flow > 0 else 'negative and a concern'})" if metrics.operating_cash_flow is not None else None,
+                f"current ratio {metrics.current_ratio:.2f} ({'healthy short-term cushion' if metrics.current_ratio >= 1.5 else 'adequate' if metrics.current_ratio >= 1 else 'below 1.0, indicating limited short-term cushion'})" if metrics.current_ratio is not None else None,
+                f"debt-to-equity {metrics.debt_to_equity:.0f} ({'conservative' if metrics.debt_to_equity <= 50 else 'moderate' if metrics.debt_to_equity <= 100 else 'elevated'})" if metrics.debt_to_equity is not None else None,
+                f"profit margin {cls._pct(metrics.profit_margin)} ({'strong' if metrics.profit_margin >= .12 else 'moderate' if metrics.profit_margin >= .07 else 'thin'})" if metrics.profit_margin is not None else None,
+            ],
+            "valuation": [
+                f"trailing P/E {metrics.trailing_pe:.1f}x ({'inexpensive' if metrics.trailing_pe <= 22 else 'moderate' if metrics.trailing_pe <= 40 else 'demanding'})" if metrics.trailing_pe is not None else None,
+                f"forward P/E {metrics.forward_pe:.1f}x ({'inexpensive' if metrics.forward_pe <= 22 else 'moderate' if metrics.forward_pe <= 40 else 'demanding'})" if metrics.forward_pe is not None else None,
+                f"PEG {metrics.peg_ratio:.1f} ({'supportive' if metrics.peg_ratio <= 1.5 else 'demanding relative to growth'})" if metrics.peg_ratio is not None else None,
+                f"EV/EBITDA {metrics.enterprise_to_ebitda:.1f}x ({'supportive' if metrics.enterprise_to_ebitda <= 15 else 'moderate' if metrics.enterprise_to_ebitda <= 20 else 'demanding'})" if metrics.enterprise_to_ebitda is not None else None,
+                f"FCF yield {cls._pct(fcf_yield)} ({'strong cash-flow value' if fcf_yield >= .06 else 'moderate' if fcf_yield >= .04 else 'low cash-flow yield'})" if fcf_yield is not None else None,
+            ],
+            "business quality": [
+                f"ROE {cls._pct(metrics.return_on_equity)} ({'strong' if metrics.return_on_equity >= .18 else 'moderate' if metrics.return_on_equity >= .12 else 'weak'})" if metrics.return_on_equity is not None else None,
+                f"ROA {cls._pct(metrics.return_on_assets)} ({'strong' if metrics.return_on_assets >= .08 else 'moderate' if metrics.return_on_assets >= .05 else 'weak'})" if metrics.return_on_assets is not None else None,
+                f"gross margin {cls._pct(metrics.gross_margin)} ({'strong' if metrics.gross_margin >= .45 else 'moderate' if metrics.gross_margin >= .30 else 'lower'})" if metrics.gross_margin is not None else None,
+                f"operating margin {cls._pct(metrics.operating_margin)} ({'strong' if metrics.operating_margin >= .18 else 'healthy' if metrics.operating_margin >= .12 else 'lower'})" if metrics.operating_margin is not None else None,
+                f"free cash flow {cls._money(metrics.free_cash_flow)} ({'positive and supportive' if metrics.free_cash_flow > 0 else 'negative and a concern'})" if metrics.free_cash_flow is not None else None,
+            ],
+            "growth": [
+                f"revenue growth {cls._pct(metrics.revenue_growth)} ({'strong' if metrics.revenue_growth >= .08 else 'modest' if metrics.revenue_growth >= .03 else 'flat or declining'})" if metrics.revenue_growth is not None else None,
+                f"earnings growth {cls._pct(metrics.earnings_growth)} ({'strong' if metrics.earnings_growth >= .08 else 'modest' if metrics.earnings_growth >= .03 else 'flat or declining'})" if metrics.earnings_growth is not None else None,
+            ],
+            "risk resilience": [
+                f"beta {metrics.beta:.2f}" if metrics.beta is not None else None,
+                f"debt-to-equity {metrics.debt_to_equity:.0f}" if metrics.debt_to_equity is not None else None,
+                f"current ratio {metrics.current_ratio:.2f}" if metrics.current_ratio is not None else None,
+                f"free cash flow {cls._money(metrics.free_cash_flow)}" if metrics.free_cash_flow is not None else None,
+            ],
+            "market context": [
+                f"share price {cls._money(metrics.price)}" if metrics.price is not None else None,
+                f"50-day average {cls._money(metrics.fifty_day_average)}" if metrics.fifty_day_average is not None else None,
+                f"200-day average {cls._money(metrics.two_hundred_day_average)}" if metrics.two_hundred_day_average is not None else None,
+                f"52-week high {cls._money(metrics.fifty_two_week_high)}" if metrics.fifty_two_week_high is not None else None,
+            ],
+        }
+        comparison_metrics = {
+            "fundamentals": ["quarterly_free_cash_flow", "quarterly_operating_cash_flow"],
+            "business quality": ["quarterly_operating_margin", "quarterly_gross_margin"],
+            "growth": ["quarterly_revenue", "quarterly_net_income"],
+            "risk resilience": ["quarterly_free_cash_flow"],
+        }
+        comparisons = [
+            value
+            for metric_name in comparison_metrics.get(label, [])
+            if (value := cls._comparison_text(metrics, metric_name))
+        ]
+        available = [value for value in inputs.get(label, []) if value] + comparisons
+        return "; ".join(available) if available else "underlying inputs were unavailable"
+
+    @staticmethod
     def _category_label(score: float) -> str:
         if score >= 80:
             return "strong"
@@ -160,7 +256,10 @@ class DeterministicDeepAnalysisProvider:
 
         for label, score in ranked[:3]:
             if score >= 60:
-                positives.append(f"{label.title()} scores {score:.0f}/100, a {self._category_label(score)} reading in Warren's current framework.")
+                positives.append(
+                    f"{label.title()} scores {score:.0f}/100, a {self._category_label(score)} reading. "
+                    f"Inputs: {self._category_inputs(label, metrics)}."
+                )
 
         if metrics.free_cash_flow is not None:
             positives.append(
@@ -175,7 +274,10 @@ class DeterministicDeepAnalysisProvider:
 
         for label, score in reversed(ranked[-3:]):
             if score < 55:
-                concerns.append(f"{label.title()} scores {score:.0f}/100 and is one of the weaker parts of the current setup.")
+                concerns.append(
+                    f"{label.title()} scores {score:.0f}/100 and is one of the weaker areas. "
+                    f"Inputs: {self._category_inputs(label, metrics)}."
+                )
 
         if metrics.trailing_pe is not None and metrics.trailing_pe >= 35:
             concerns.append(f"Trailing P/E is {metrics.trailing_pe:.1f}x, so the current price embeds a relatively demanding earnings multiple.")

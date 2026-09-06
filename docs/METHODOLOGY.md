@@ -260,6 +260,12 @@ Where available, forecast assumptions may be anchored by:
 
 The LLM may explain or challenge assumptions but may not silently replace the deterministic DCF calculation.
 
+### Operating comparisons
+
+Score explanations show the reported inputs that moved the score and, where compatible data is available, compare quarterly revenue, net income, operating cash flow, free cash flow, gross margin and operating margin with the previous quarter and the same quarter a year earlier. Year-over-year comparisons help control for seasonality, while sequential comparisons show the latest direction of travel. Margin movements are stated in percentage points so they are not confused with percentage growth.
+
+Industry or peer medians are shown only when a provider supplies a named, economically comparable peer group and aligned reporting periods. Ask Warren does not substitute a broad sector average or mix annual and quarterly periods merely to fill the field.
+
 The current `dcf-v1.0` implementation normalizes base FCF as the median of up to three positive annual observations when at least two are available. Otherwise it uses current FCF and labels that fallback explicitly. Base revenue growth is anchored to the median of available Yahoo forward revenue and earnings growth estimates, bounded between 2% and 12%; when both estimates are unavailable, the documented fallback is 6%. Bear and Bull revenue growth are deterministic adjustments around that base.
 
 Each scenario explicitly projects revenue and an FCF-margin path. Base holds the normalized starting FCF margin constant; Bear contracts it by one percentage point over five years; Bull expands it by one percentage point. The resulting FCF CAGR is returned alongside the revenue and margin assumptions rather than used as a hidden input.

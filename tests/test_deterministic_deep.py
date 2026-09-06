@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from warren.deep import DeterministicDeepAnalysisProvider
-from warren.models import CategoryScores, EvidenceBundle, MetricSnapshot, SourceStatus
+from warren.models import CategoryScores, EvidenceBundle, MetricComparison, MetricSnapshot, SourceStatus
 
 
 @pytest.mark.asyncio
@@ -23,6 +23,16 @@ async def test_deterministic_provider_returns_public_verdict_vocabulary():
         return_on_equity=0.24,
         debt_to_equity=40,
         current_ratio=1.5,
+        quarterly_comparisons=[
+            MetricComparison(
+                metric="quarterly_operating_margin",
+                label="Quarterly operating margin",
+                unit="percent",
+                current=0.22,
+                previous_quarter=0.20,
+                year_ago=0.18,
+            )
+        ],
     )
     scores = CategoryScores(
         fundamentals=80,
@@ -41,5 +51,9 @@ async def test_deterministic_provider_returns_public_verdict_vocabulary():
     assert analysis.confidence in {"low", "medium", "high"}
     assert analysis.thesis
     assert analysis.bull_case
+    assert any("Inputs:" in item for item in analysis.bull_case)
+    assert any("operating margin 22.0%" in item for item in analysis.bull_case)
+    assert any("2.0 percentage points above last quarter" in item for item in analysis.bull_case)
+    assert any("4.0 percentage points above the same quarter last year" in item for item in analysis.bull_case)
     assert analysis.bear_case
     assert model == "deterministic-v1.1"
