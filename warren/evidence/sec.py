@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import os
+import re
 from datetime import date
 
 import httpx
+import yfinance as yf
 
 from ..models import EvidenceBundle, FilingEvidence, MetricSnapshot, SecFactEvidence, SourceStatus
 
@@ -80,6 +82,53 @@ class SecFilingEvidenceProvider:
         self._ticker_map = mapping
         return mapping
 
+    def _yahoo_filing_mirror(self, symbol: str) -> EvidenceBundle:
+        """Fallback to Yahoo's byte-for-byte SEC filing mirror when EDGAR blocks a serverless IP."""
+        bundle = EvidenceBundle()
+        rows = yf.Ticker(symbol).sec_filings or []
+        cik: int | None = None
+        for row in rows:
+            form = str(row.get("type") or "")
+            if form not in self.FORMS:
+                continue
+            edgar_url = str(row.get("edgarUrl") or "")
+            accession_match = re.search(r"/([0-9]{10}-[0-9]{2}-[0-9]{6})_([0-9]+)$", edgar_url)
+            accession = accession_match.group(1) if accession_match else None
+            if accession_match:
+                cik = int(accession_match.group(2))
+            exhibits = row.get("exhibits") or {}
+            document_url = exhibits.get(form) or next(iter(exhibits.values()), None)
+            if not document_url:
+                continue
+            bundle.filings.append(FilingEvidence(
+                form=form,
+                filed_at=row.get("date") if isinstance(row.get("date"), date) else self._parse_date(str(row.get("date") or "")),
+                accession_number=accession,
+                primary_document=str(document_url).rsplit("/", 1)[-1],
+                url=str(document_url),
+            ))
+        essentials: list[FilingEvidence] = []
+        family_counts = {"annual": 0, "quarterly": 0}
+        for filing in bundle.filings:
+            family = "annual" if filing.form in {"10-K", "20-F", "40-F"} else "quarterly" if filing.form == "10-Q" else None
+            if family and family_counts[family] < 2:
+                essentials.append(filing)
+                family_counts[family] += 1
+        chosen = essentials + [filing for filing in bundle.filings if filing not in essentials]
+        bundle.filings = sorted(
+            chosen[: self.max_filings], key=lambda filing: filing.filed_at or date.min, reverse=True
+        )
+        bundle.metadata.update({"sec_cik": cik, "sec_filing_transport": "Yahoo Finance SEC filing mirror"})
+        bundle.source_status.append(SourceStatus(
+            source="SEC EDGAR",
+            status="partial" if bundle.filings else "unavailable",
+            detail=(
+                f"EDGAR blocked the serverless request; {len(bundle.filings)} SEC filing documents were recovered from Yahoo Finance's filing mirror."
+                if bundle.filings else "EDGAR blocked the serverless request and no mirrored filing documents were available."
+            ),
+        ))
+        return bundle
+
     @staticmethod
     def _parse_date(raw: str | None) -> date | None:
         if not raw:
@@ -136,7 +185,10 @@ class SecFilingEvidenceProvider:
             return bundle
 
         with self._client() as client:
-            mapping = self._load_ticker_map(client)
+            try:
+                mapping = self._load_ticker_map(client)
+            except httpx.HTTPError:
+                return self._yahoo_filing_mirror(symbol)
             company = mapping.get(symbol)
             if company is None:
                 bundle.source_status.append(
