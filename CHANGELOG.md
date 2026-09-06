@@ -4,6 +4,8 @@ All notable product/module changes should be recorded here.
 
 ## Unreleased
 
+- Fall back to deterministic synthesis when Gemini is unavailable or its free quota is exhausted.
+
 ### Added
 
 - Official SEC company-facts retrieval for selected US-GAAP XBRL fundamentals with period, form, filing date and accession provenance.

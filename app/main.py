@@ -6,7 +6,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 
-from warren.deep import DeterministicDeepAnalysisProvider, GeminiDeepAnalysisProvider
+from warren.deep import DeterministicDeepAnalysisProvider, GeminiDeepAnalysisProvider, ResilientDeepAnalysisProvider
 from warren.engine import Warren
 from warren.evidence import (
     CompositeEvidenceProvider,
@@ -23,7 +23,10 @@ from .models import AnalyzeRequest, AnalyzeResponse
 
 def _deep_provider():
     if os.getenv("GEMINI_API_KEY"):
-        return GeminiDeepAnalysisProvider()
+        return ResilientDeepAnalysisProvider(
+            primary=GeminiDeepAnalysisProvider(),
+            fallback=DeterministicDeepAnalysisProvider(),
+        )
     return DeterministicDeepAnalysisProvider()
 
 
