@@ -51,9 +51,12 @@ async def test_deterministic_provider_returns_public_verdict_vocabulary():
     assert analysis.confidence in {"low", "medium", "high"}
     assert analysis.thesis
     assert analysis.bull_case
-    assert any("Inputs:" in item for item in analysis.bull_case)
     assert any("operating margin 22.0%" in item for item in analysis.bull_case)
     assert any("2.0 percentage points above last quarter" in item for item in analysis.bull_case)
     assert any("4.0 percentage points above the same quarter last year" in item for item in analysis.bull_case)
+    assert all("scores " not in item.lower() for item in analysis.bull_case + analysis.bear_case)
+    assert all("above average" not in item.lower() for item in analysis.bull_case + analysis.bear_case)
+    assert any("Why it matters:" in item for item in analysis.bull_case)
+    assert "/100" not in analysis.thesis
     assert analysis.bear_case
     assert model == "deterministic-v1.1"

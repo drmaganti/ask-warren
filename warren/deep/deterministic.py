@@ -127,6 +127,50 @@ class DeterministicDeepAnalysisProvider:
             return "weak"
         return "very weak"
 
+    @classmethod
+    def _category_argument(cls, label: str, metrics: MetricSnapshot, supportive: bool) -> str:
+        titles = {
+            "fundamentals": "Cash generation and financial position",
+            "valuation": "The current valuation",
+            "business quality": "Profitability and business quality",
+            "growth": "The growth trend",
+            "risk resilience": "Financial resilience",
+            "market context": "The share-price trend",
+        }
+        implications = {
+            "fundamentals": (
+                "Positive cash generation gives the company more capacity to reinvest, repay debt or return capital."
+                if supportive else
+                "Weak cash generation or limited balance-sheet flexibility leaves less room for setbacks."
+            ),
+            "valuation": (
+                "A less demanding price gives investors more room for imperfect results."
+                if supportive else
+                "A demanding price leaves less room for earnings or growth to disappoint."
+            ),
+            "business quality": (
+                "Healthy returns and margins can make earnings more durable through changing conditions."
+                if supportive else
+                "Lower returns or margins can make earnings more vulnerable to cost and demand pressure."
+            ),
+            "growth": (
+                "Improving sales and earnings can support future cash flow if the trend continues."
+                if supportive else
+                "Slower or uneven growth makes it harder to justify optimistic expectations."
+            ),
+            "risk resilience": (
+                "The observed financial cushion can help the company absorb normal business volatility."
+                if supportive else
+                "The observed financial cushion may be limited if operating conditions deteriorate."
+            ),
+            "market context": (
+                "The market trend is supportive, although price momentum does not establish business value."
+                if supportive else
+                "Weak price momentum can signal investor caution, although it does not establish business value."
+            ),
+        }
+        return f"{titles[label]}: {cls._category_inputs(label, metrics)}. Why it matters: {implications[label]}"
+
     @staticmethod
     def _verdict(scores: CategoryScores) -> str:
         if (
@@ -256,10 +300,7 @@ class DeterministicDeepAnalysisProvider:
 
         for label, score in ranked[:3]:
             if score >= 60:
-                positives.append(
-                    f"{label.title()} scores {score:.0f}/100, a {self._category_label(score)} reading. "
-                    f"Inputs: {self._category_inputs(label, metrics)}."
-                )
+                positives.append(self._category_argument(label, metrics, supportive=True))
 
         if metrics.free_cash_flow is not None:
             positives.append(
@@ -274,10 +315,7 @@ class DeterministicDeepAnalysisProvider:
 
         for label, score in reversed(ranked[-3:]):
             if score < 55:
-                concerns.append(
-                    f"{label.title()} scores {score:.0f}/100 and is one of the weaker areas. "
-                    f"Inputs: {self._category_inputs(label, metrics)}."
-                )
+                concerns.append(self._category_argument(label, metrics, supportive=False))
 
         if metrics.trailing_pe is not None and metrics.trailing_pe >= 35:
             concerns.append(f"Trailing P/E is {metrics.trailing_pe:.1f}x, so the current price embeds a relatively demanding earnings multiple.")
@@ -320,8 +358,8 @@ class DeterministicDeepAnalysisProvider:
 
         if verdict == "attractive":
             thesis = (
-                f"{metrics.company_name or metrics.ticker} currently screens as Attractive: the overall score is "
-                f"{scores.overall:.0f}/100, with sufficiently supportive business quality, fundamentals, valuation and risk resilience. "
+                f"{metrics.company_name or metrics.ticker} currently screens as Attractive because business quality, "
+                "fundamentals, valuation and financial resilience are sufficiently supportive at the current price. "
                 "The conclusion is research-oriented and should be revisited when price, earnings, filings or estimate revisions change."
             )
             changes = [
@@ -331,8 +369,8 @@ class DeterministicDeepAnalysisProvider:
             ]
         elif verdict == "avoid":
             thesis = (
-                f"{metrics.company_name or metrics.ticker} currently screens as Avoid: the overall score is "
-                f"{scores.overall:.0f}/100 and one or more fundamental, quality or risk-resilience dimensions are too weak for a favorable setup."
+                f"{metrics.company_name or metrics.ticker} currently screens as Avoid because one or more fundamental, "
+                "business-quality or financial-resilience concerns make the risk/reward unfavorable at the current price."
             )
             changes = [
                 "Clear improvement in the weakest fundamental or business-quality factors.",
@@ -341,8 +379,8 @@ class DeterministicDeepAnalysisProvider:
             ]
         else:
             thesis = (
-                f"{metrics.company_name or metrics.ticker} currently belongs on Watch: the overall score is "
-                f"{scores.overall:.0f}/100, but the evidence does not yet support an Attractive conclusion or an Avoid conclusion. "
+                f"{metrics.company_name or metrics.ticker} currently belongs on Watch because the evidence does not yet "
+                "support an Attractive or Avoid conclusion. "
                 "The setup has meaningful strengths and unresolved trade-offs."
             )
             changes = [

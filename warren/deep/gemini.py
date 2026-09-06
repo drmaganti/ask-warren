@@ -62,10 +62,12 @@ class GeminiDeepAnalysisProvider:
             "News entries with retrieval_depth=headline prove only that the headline was published: do not infer unseen article contents. "
             "Structured analyst revisions, earnings observations and FRED observations may be compared directly. "
             "Explicitly identify missing or unavailable evidence. Distinguish business quality from stock attractiveness. "
-            "When practical, identify the source or claim category supporting an argument. Whenever a Bull Case or Bear Case "
-            "item mentions a category score, explain that score with the exact underlying metrics from the packet. Include at "
-            "least two available inputs (for example growth rates, margins, cash flow, leverage, valuation multiples, beta, or "
-            "moving averages). Never say only that a score is strong, weak, high, or low."
+            "When practical, identify the source or claim category supporting an argument. Do not mention numerical category "
+            "scores or describe them as high, low, strong, weak, above average or below average in the thesis, positives, concerns, "
+            "Bull Case, Bear Case or risks. Scores are internal decision aids, not investor-facing evidence. Each Bull Case and "
+            "Bear Case item must lead with a specific finding, give the relevant metrics or evidence, compare with the previous "
+            "quarter and same quarter last year when compatible comparisons exist, and explain why the finding matters to an "
+            "investor. Never invent an industry or peer benchmark."
         )
 
         final_prompt = f"""You are Warren's investment research evaluator. {shared}
