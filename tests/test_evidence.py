@@ -276,6 +276,15 @@ def test_sec_does_not_guess_cross_listing_for_tsx():
     assert bundle.source_status[0].status == "unavailable"
 
 
+def test_sec_can_resolve_cik_from_yahoo_when_sec_ticker_map_is_blocked(monkeypatch):
+    class Stock:
+        sec_filings = [{"edgarUrl": "https://www.sec.gov/Archives/edgar/data/909832/0000909832-26-000060_909832"}]
+
+    monkeypatch.setattr("warren.evidence.sec.yf.Ticker", lambda symbol: Stock())
+
+    assert SecFilingEvidenceProvider._resolve_cik_from_yahoo("COST") == 909832
+
+
 def test_sec_extracts_latest_structured_xbrl_facts():
     payload = {
         "facts": {

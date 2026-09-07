@@ -66,6 +66,19 @@ class SecFilingEvidenceProvider:
             },
         )
 
+    @staticmethod
+    def _resolve_cik_from_yahoo(symbol: str) -> int | None:
+        """Resolve a CIK without the SEC ticker-map host when that host blocks Vercel."""
+        try:
+            rows = yf.Ticker(symbol).sec_filings or []
+        except Exception:
+            return None
+        for row in rows:
+            match = re.search(r"/([0-9]{10}-[0-9]{2}-[0-9]{6})_([0-9]+)$", str(row.get("edgarUrl") or ""))
+            if match:
+                return int(match.group(2))
+        return None
+
     def _load_ticker_map(self, client: httpx.Client) -> dict[str, tuple[int, str]]:
         if self._ticker_map is not None:
             return self._ticker_map
@@ -188,8 +201,12 @@ class SecFilingEvidenceProvider:
             try:
                 mapping = self._load_ticker_map(client)
             except httpx.HTTPError:
-                return self._yahoo_filing_mirror(symbol)
+                mapping = {}
             company = mapping.get(symbol)
+            if company is None:
+                fallback_cik = self._resolve_cik_from_yahoo(symbol)
+                if fallback_cik is not None:
+                    company = (fallback_cik, metrics.company_name or symbol)
             if company is None:
                 bundle.source_status.append(
                     SourceStatus(
@@ -201,9 +218,12 @@ class SecFilingEvidenceProvider:
                 return bundle
 
             cik, sec_name = company
-            response = client.get(self.SUBMISSIONS_URL.format(cik=cik))
-            response.raise_for_status()
-            payload = response.json()
+            try:
+                response = client.get(self.SUBMISSIONS_URL.format(cik=cik))
+                response.raise_for_status()
+                payload = response.json()
+            except (httpx.HTTPError, ValueError, TypeError):
+                return self._yahoo_filing_mirror(symbol)
             try:
                 facts_response = client.get(self.COMPANY_FACTS_URL.format(cik=cik))
                 facts_response.raise_for_status()

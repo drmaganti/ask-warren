@@ -94,7 +94,7 @@ class UpstashVectorClient:
 class SecRagEvidenceProvider:
     """Adds citation-ready full-text SEC passages to normal SEC evidence."""
 
-    cache_namespace = "sec-rag-drivers-v2"
+    cache_namespace = "sec-rag-direct-cik-v3"
     QUERY = (
         "What materially changed in business risks, demand, competition, strategy, margins, "
         "liquidity, capital allocation, guidance, or management's outlook? Explain revenue and earnings changes: "
