@@ -200,7 +200,7 @@ Do not expose raw reconciliation diagnostics such as an “unreconciled differen
 
 The insight experience is not complete until all of the following are true:
 
-- [ ] Bull and Bear contain two to four distinct investment insights rather than metric summaries.
+- [ ] Bull and Bear target six distinct, evidence-ranked investment insights rather than metric summaries; return fewer when six strong points are not supported.
 - [ ] The default view limits each insight to a headline and no more than three summary sentences; supporting analysis is collapsed by default.
 - [ ] Every insight includes a finding, investor implication and what-to-watch condition.
 - [ ] Every causal statement labels durability or explicitly says why durability is unresolved.
@@ -229,7 +229,7 @@ The insight experience is not complete until all of the following are true:
 - False precision through point-price predictions or unsupported probabilities.
 - Guaranteed detection of every legal, regulatory or corporate event.
 - Treating social sentiment, price momentum or analyst consensus as independently decisive.
-- Producing equal numbers of Bull and Bear arguments when the evidence is asymmetric.
+- Padding either side with weak or repetitive arguments merely to reach the six-insight target.
 - Replacing the underlying sources; the interface should make verification easier, not ask users to trust Ask Warren blindly.
 
 ## Evaluation standard

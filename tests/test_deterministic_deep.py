@@ -105,6 +105,46 @@ async def test_deterministic_provider_returns_public_verdict_vocabulary():
     assert model == "deterministic-v1.3-ranked-lenses"
 
 
+@pytest.mark.asyncio
+async def test_deterministic_provider_can_surface_six_strong_reasons_per_side():
+    provider = DeterministicDeepAnalysisProvider()
+    metrics = MetricSnapshot(
+        ticker="COST",
+        price=915,
+        market_cap=406_000_000_000,
+        free_cash_flow=6_950_000_000,
+        operating_cash_flow=15_000_000_000,
+        total_cash=11_100_000_000,
+        total_debt=10_200_000_000,
+        trailing_pe=46,
+        forward_pe=40,
+        revenue_growth=.215,
+        earnings_growth=.455,
+        operating_margin=.04,
+        profit_margin=.03,
+        return_on_assets=.087,
+        analyst_target_low=700,
+        analyst_target_median=900,
+        analyst_target_high=1200,
+        analyst_opinion_count=30,
+        quarterly_comparisons=[
+            MetricComparison(metric="quarterly_operating_margin", label="Operating margin", unit="percent", current=.04, previous_quarter=.037, year_ago=.039),
+            MetricComparison(metric="quarterly_capital_expenditure", label="Capital expenditure", unit="money", current=-1_400_000_000, year_ago=-1_100_000_000),
+        ],
+    )
+    scores = CategoryScores(fundamentals=73, valuation=29, business_quality=68, growth=90, risk_resilience=75, market_context=62, overall=62)
+    evidence = EvidenceBundle(
+        estimate_revisions=[EstimateRevisionEvidence(horizon="0y", analyst_count=30, earnings_growth=.13, revenue_growth=.09)],
+        technical=[TechnicalEvidence(close=915, sma_50=943, sma_200=960, rsi_14=37)],
+        claims=[EvidenceClaim(id="estimate_revision:cost", category="estimate_revision", claim="Consensus growth", authority_tier=2, retrieval_depth="structured", confidence="high", references=[EvidenceReference(source="Yahoo Finance", authority_tier=2, retrieval_depth="structured")], metadata={"horizon":"0y"})],
+    )
+
+    analysis, _ = await provider.analyze(metrics, scores, evidence)
+
+    assert len(analysis.bull_insights) >= 6
+    assert len(analysis.bear_insights) >= 6
+
+
 def test_structured_insights_surface_valuation_and_stretched_trading_when_material():
     metrics = MetricSnapshot(
         ticker="NVDA",

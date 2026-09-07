@@ -19,6 +19,11 @@ def _number(value: Any) -> float | None:
     return number if math.isfinite(number) else None
 
 
+def _integer(value: Any) -> int | None:
+    number = _number(value)
+    return int(number) if number is not None else None
+
+
 def _date_value(value: Any) -> date | None:
     if value is None:
         return None
@@ -164,4 +169,8 @@ class YFinanceMarketDataProvider:
             fifty_two_week_low=_number(info.get("fiftyTwoWeekLow")),
             fifty_day_average=_number(info.get("fiftyDayAverage")),
             two_hundred_day_average=_number(info.get("twoHundredDayAverage")),
+            analyst_target_low=_number(info.get("targetLowPrice")),
+            analyst_target_median=_number(info.get("targetMedianPrice") or info.get("targetMeanPrice")),
+            analyst_target_high=_number(info.get("targetHighPrice")),
+            analyst_opinion_count=_integer(info.get("numberOfAnalystOpinions")),
         )

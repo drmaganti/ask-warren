@@ -287,7 +287,7 @@ class DeterministicDeepAnalysisProvider:
             ),
             reverse=True,
         )
-        return [item for _, item in ranked[:4]]
+        return [item for _, item in ranked[:6]]
 
     @staticmethod
     def _insider_context(evidence: EvidenceBundle) -> tuple[list[str], list[str]]:
@@ -595,6 +595,108 @@ class DeterministicDeepAnalysisProvider:
                 scenario_path="The Bull path requires cash to fund profitable reinvestment, debt reduction or disciplined shareholder returns rather than low-return spending.",
                 what_to_watch=["Free cash flow across subsequent quarters", "Working capital", "Capital expenditure", "Net debt"],
                 confidence="medium",
+            ))
+
+        if metrics.revenue_growth is not None and metrics.revenue_growth >= 0.05:
+            bull.append(InvestmentInsight(
+                headline="Customer spending is supporting meaningful sales growth",
+                lens="future_demand",
+                finding=f"Reported revenue growth is {cls._pct(metrics.revenue_growth)}.",
+                cause="The reported top-line growth shows that demand, pricing, mix or a combination of them is expanding sales; the available aggregate data does not separate those drivers.",
+                durability="unresolved", time_horizon="near_term",
+                investor_implication="Continued sales growth gives future earnings more room to expand without relying only on cost cutting.",
+                expectation_gap="The investment case is stronger if volume or customer activity—not price alone—is sustaining this growth.",
+                scenario_path="The Bull path requires sales growth to persist while margins and cash conversion remain stable.",
+                what_to_watch=["Customer traffic, transactions or units", "Revenue-estimate revisions", "Pricing versus volume"],
+                likelihood="medium", impact="high", confidence="medium",
+            ))
+
+        if metrics.return_on_assets is not None and metrics.return_on_assets >= 0.07:
+            bull.append(InvestmentInsight(
+                headline="The business earns a productive return on its asset base",
+                lens="capital_allocation",
+                finding=f"Return on assets is {cls._pct(metrics.return_on_assets)}.",
+                cause="The company is producing meaningful profit relative to the assets required to operate the business.",
+                durability="recurring", time_horizon="long_term",
+                investor_implication="Productive assets can support compounding when management reinvests at similar returns.",
+                expectation_gap="Future value creation depends on new investment earning returns close to the existing business.",
+                scenario_path="The advantage strengthens if returns remain stable as the asset base grows; it weakens if expansion requires progressively more capital.",
+                what_to_watch=["Return on assets", "Capital expenditure", "Revenue generated per dollar of assets"],
+                likelihood="medium", impact="medium", confidence="medium",
+            ))
+
+        if metrics.total_cash is not None and metrics.total_debt is not None and metrics.total_cash >= metrics.total_debt:
+            bull.append(InvestmentInsight(
+                headline="Cash covers the reported debt balance",
+                lens="company_risk",
+                finding=f"Reported cash of {cls._money(metrics.total_cash)} is at least as large as debt of {cls._money(metrics.total_debt)}.",
+                cause="The balance sheet currently shows more cash than debt.",
+                durability="unresolved", time_horizon="medium_term",
+                investor_implication="This financial cushion can protect reinvestment plans and reduce refinancing pressure during weaker periods.",
+                expectation_gap="The benefit lasts only if cash is not consumed by acquisitions, buybacks or operating deterioration.",
+                scenario_path="The cushion remains valuable if operating cash flow replenishes spending and distributions.",
+                what_to_watch=["Net cash or net debt", "Operating cash flow", "Acquisition and buyback spending"],
+                likelihood="medium", impact="medium", confidence="high",
+            ))
+
+        fcf_yield = metrics.free_cash_flow / metrics.market_cap if metrics.free_cash_flow is not None and metrics.market_cap not in (None, 0) else None
+        if fcf_yield is not None and fcf_yield < 0.025:
+            bear.append(InvestmentInsight(
+                headline="The current price offers a low cash-flow yield",
+                lens="market_expectations",
+                finding=f"Free-cash-flow yield is approximately {cls._pct(fcf_yield)}.",
+                cause="The market capitalization is large relative to the cash the business currently generates.",
+                durability="recurring", time_horizon="medium_term",
+                investor_implication="The shares need substantial future cash-flow growth to produce an attractive return from today's price.",
+                expectation_gap="A low starting yield leaves little protection if growth disappoints.",
+                scenario_path="The concern fades if cash flow compounds rapidly; it worsens if cash generation stalls while the valuation remains elevated.",
+                what_to_watch=["Free-cash-flow growth", "Free-cash-flow margin", "Market value relative to cash flow"],
+                likelihood="medium", impact="high", confidence="high",
+            ))
+
+        if metrics.profit_margin is not None and metrics.profit_margin < 0.05:
+            bear.append(InvestmentInsight(
+                headline="Thin profit margins leave less room for operating shocks",
+                lens="operating_leverage",
+                finding=f"Net profit margin is {cls._pct(metrics.profit_margin)}.",
+                cause="Only a small portion of each sales dollar reaches net income after operating costs, interest and taxes.",
+                durability="recurring", time_horizon="medium_term",
+                investor_implication="Wage, merchandise, tariff or other cost pressure can materially affect earnings unless it is offset by pricing or productivity.",
+                expectation_gap="A premium valuation is harder to defend if modest cost pressure compresses an already thin margin.",
+                scenario_path="The risk recedes if pricing power and productivity expand margins without weakening customer demand.",
+                what_to_watch=["Gross margin", "Operating expenses as a share of sales", "Pricing versus customer volume"],
+                likelihood="medium", impact="medium", confidence="high",
+            ))
+
+        capex = next((x for x in metrics.quarterly_comparisons if x.metric == "quarterly_capital_expenditure"), None)
+        if capex and capex.year_ago not in (None, 0) and abs(capex.current) > abs(capex.year_ago) * 1.15:
+            increase = abs(capex.current) / abs(capex.year_ago) - 1
+            bear.append(InvestmentInsight(
+                headline="Investment spending is rising faster than a year ago",
+                lens="capital_allocation",
+                finding=f"Quarterly capital expenditure increased {increase * 100:.1f}% from the same quarter last year.",
+                cause="The cash-flow statement shows a larger outlay for property, equipment or other capital investment.",
+                durability="unresolved", time_horizon="medium_term",
+                investor_implication="Higher investment can create growth, but it reduces near-term free cash flow until the new capacity earns an adequate return.",
+                expectation_gap="The market must ultimately see enough incremental sales and profit to justify the added spending.",
+                scenario_path="The spending becomes constructive if returns and demand rise; it becomes a drag if expansion outpaces profitable demand.",
+                what_to_watch=["Capital expenditure", "New capacity utilization", "Return on assets", "Free-cash-flow conversion"],
+                likelihood="medium", impact="medium", confidence="high",
+            ))
+
+        if metrics.price is not None and metrics.analyst_target_median is not None and metrics.analyst_target_median < metrics.price:
+            downside = metrics.analyst_target_median / metrics.price - 1
+            bear.append(InvestmentInsight(
+                headline="The median analyst target is below the current share price",
+                lens="market_expectations",
+                finding=f"The median analyst target is {cls._money(metrics.analyst_target_median)}, or {abs(downside) * 100:.1f}% below the current price.",
+                cause="The shares trade above the middle of the published analyst target range.",
+                durability="unresolved", time_horizon="near_term",
+                investor_implication="Even analysts who follow the company may see limited near-term upside at the current price.",
+                expectation_gap="Targets can lag new information, but the gap shows that current market expectations are ahead of the median published view.",
+                scenario_path="The concern fades if analysts raise targets because earnings expectations improve, not merely because valuation multiples expand.",
+                what_to_watch=["Median analyst price target", "Target changes after new business evidence", "Forward earnings revisions"],
+                likelihood="medium", impact="medium", confidence="medium",
             ))
 
         return cls._rank_insights(bull), cls._rank_insights(bear)

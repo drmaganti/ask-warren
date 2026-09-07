@@ -58,6 +58,10 @@ class MetricSnapshot(BaseModel):
     fifty_two_week_low: float | None = None
     fifty_day_average: float | None = None
     two_hundred_day_average: float | None = None
+    analyst_target_low: float | None = None
+    analyst_target_median: float | None = None
+    analyst_target_high: float | None = None
+    analyst_opinion_count: int | None = None
 
 
 class CategoryScores(BaseModel):

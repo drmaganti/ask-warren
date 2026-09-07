@@ -59,9 +59,12 @@ def test_analyze_page_is_served():
     assert "What caused it" in response.text
     assert "What to watch" in response.text
     assert "Next decision point" in response.text
-    assert "Open an insight to see what supports it" in response.text
+    assert "Open a reason to see what supports it" in response.text
+    assert "6 strongest reasons to own" in response.text
+    assert "6 strongest reasons to sell or wait" in response.text
+    assert "Analyst price targets" in response.text
+    assert "Signals that could change the view" in response.text
     assert "firstSentences" in response.text
-    assert "What matters next" in response.text
     assert "Evidence confidence" in response.text
     assert "Analysis updated" in response.text
     assert "Watchlist" not in response.text

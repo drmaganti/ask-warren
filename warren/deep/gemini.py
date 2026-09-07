@@ -83,7 +83,7 @@ class GeminiDeepAnalysisProvider:
             "when its potential financial or strategic materiality can be explained. Evaluate these lenses on every run: future demand, "
             "earnings quality, operating leverage, capital allocation, market expectations/valuation, market positioning/technical extension, "
             "and company-specific risk. Do not force an unsupported visible insight. Rank supported candidates by financial impact, likelihood, "
-            "evidence confidence and decision relevance, then return only the strongest 3-4 insights per side. For technically stretched shares, "
+            "evidence confidence and decision relevance, then return the strongest 6 distinct insights per side. If six are not supported, return fewer rather than padding the list. For technically stretched shares, "
             "use RSI, distance from moving averages, Bollinger position and volume versus its 20-day average; never call a stock crowded or "
             "overtraded from price appreciation alone. Each visible insight should explain the expectation gap and a plausible success or failure path."
         )
