@@ -285,6 +285,13 @@ def test_sec_can_resolve_cik_from_yahoo_when_sec_ticker_map_is_blocked(monkeypat
     assert SecFilingEvidenceProvider._resolve_cik_from_yahoo("COST") == 909832
 
 
+def test_sec_rejects_placeholder_user_agent_contact():
+    provider = SecFilingEvidenceProvider(user_agent="AskWarren contact@example.com")
+
+    assert "example.com" not in provider.user_agent
+    assert "@" in provider.user_agent
+
+
 def test_sec_extracts_latest_structured_xbrl_facts():
     payload = {
         "facts": {

@@ -48,9 +48,11 @@ class SecFilingEvidenceProvider:
 
     def __init__(self, max_filings: int = 8, user_agent: str | None = None, timeout: float = 20.0):
         self.max_filings = max(0, max_filings)
-        self.user_agent = user_agent or os.getenv(
-            "SEC_USER_AGENT",
-            "AskWarren/0.4 https://github.com/drmaganti/ask-warren",
+        configured_agent = user_agent or os.getenv("SEC_USER_AGENT")
+        self.user_agent = (
+            configured_agent
+            if configured_agent and "example.com" not in configured_agent.lower() and "@" in configured_agent
+            else "AskWarren/0.8 drmaganti@users.noreply.github.com"
         )
         self.timeout = timeout
         self._ticker_map: dict[str, tuple[int, str]] | None = None

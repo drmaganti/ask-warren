@@ -156,7 +156,7 @@ class SecRagEvidenceProvider:
     def _download_chunks(self, ticker: str, filing: FilingEvidence) -> list[dict[str, Any]]:
         response = httpx.get(
             filing.url,
-            headers={"User-Agent": os.getenv("SEC_USER_AGENT", "AskWarren/0.5 https://github.com/drmaganti/ask-warren")},
+            headers={"User-Agent": os.getenv("SEC_USER_AGENT", "AskWarren/0.8 drmaganti@users.noreply.github.com")},
             follow_redirects=True,
             timeout=self.timeout,
         )

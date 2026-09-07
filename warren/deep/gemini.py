@@ -24,7 +24,10 @@ class GeminiDeepAnalysisProvider:
             "contents": [{"role": "user", "parts": [{"text": prompt}]}],
             "generationConfig": {"temperature": 0.15, "responseMimeType": "application/json"},
         }
-        timeout = httpx.Timeout(connect=8.0, read=42.0, write=12.0, pool=8.0)
+        # Rich six-per-side synthesis can take longer than 45 seconds even for
+        # Flash models. Vercel Fluid Compute allows the request to wait without
+        # consuming active CPU while Gemini generates the response.
+        timeout = httpx.Timeout(connect=8.0, read=95.0, write=12.0, pool=8.0)
         async with httpx.AsyncClient(timeout=timeout) as client:
             response = await client.post(
                 url,

@@ -204,7 +204,7 @@ export FRED_API_KEY="..."
 export ALPHA_VANTAGE_API_KEY="..."
 
 # Recommended for production automated SEC access.
-export SEC_USER_AGENT="AskWarren/0.4 contact@example.com"
+export SEC_USER_AGENT="AskWarren/0.8 your-real-contact-email@domain.com"
 ```
 
 Screen mode does not require an LLM key or evidence-provider keys.
