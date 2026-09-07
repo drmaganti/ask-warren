@@ -43,25 +43,25 @@ def test_analyze_page_is_served():
     assert response.status_code == 200
     assert "Ask Warren about a stock." in response.text
     assert "U.S. equities V1" in response.text
-    assert "Run Analysis" in response.text
-    assert "Sources and Data Quality" in response.text
-    assert "Filing Insights and Recent Research" in response.text
-    assert "Supporting Evidence" in response.text
-    assert "SEC-Reported Fundamentals" in response.text
-    assert "Technical Snapshot" in response.text
-    assert "Insider Activity" in response.text
+    assert "Investment View" in response.text
+    assert "Bull &amp; Bear" in response.text
+    assert "Sources and data quality" in response.text
+    assert "Filing insights and recent research" in response.text
+    assert "Supporting evidence" in response.text
+    assert "SEC-reported fundamentals" in response.text
+    assert "Technical snapshot" in response.text
+    assert "Insider activity" in response.text
     assert "Methodology" in response.text
-    assert "Roadmap" in response.text
     assert 'aria-live="polite"' in response.text
-    assert "Missing Information" in response.text
+    assert "Missing information" in response.text
     assert "history.replaceState" in response.text
     assert "Sensitivity" in response.text
     assert "What caused it" in response.text
     assert "What to watch" in response.text
     assert "Next decision point" in response.text
-    assert "Click a bullet to see the reasoning and sources." in response.text
+    assert "Open an insight to see what supports it" in response.text
     assert "firstSentences" in response.text
-    assert "What Matters Next" in response.text
+    assert "What matters next" in response.text
     assert "Evidence confidence" in response.text
     assert "Analysis updated" in response.text
     assert "Watchlist" not in response.text
