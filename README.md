@@ -160,6 +160,7 @@ See [docs/API.md](docs/API.md).
 ## Documentation
 
 - [Product definition](docs/PRODUCT.md)
+- [Investment Insight Standard](docs/INVESTMENT_INSIGHT_STANDARD.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [API contract](docs/API.md)
 - [Methodology](docs/METHODOLOGY.md)
