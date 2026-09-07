@@ -277,6 +277,23 @@ class AnalysisCitation(BaseModel):
     claim_ids: list[str] = Field(default_factory=list)
 
 
+class InvestmentInsight(BaseModel):
+    """An evidence-backed interpretation presented in Bull or Bear."""
+
+    headline: str
+    finding: str
+    cause: str
+    durability: Literal["recurring", "temporary", "one_time", "unresolved"]
+    time_horizon: Literal["near_term", "medium_term", "long_term", "unresolved"]
+    investor_implication: str
+    what_to_watch: list[str] = Field(min_length=1)
+    catalyst: str | None = None
+    likelihood: Literal["low", "medium", "high", "unresolved"] = "unresolved"
+    impact: Literal["low", "medium", "high", "unresolved"] = "unresolved"
+    confidence: Literal["low", "medium", "high"]
+    claim_ids: list[str] = Field(default_factory=list)
+
+
 class DeepAnalysis(BaseModel):
     thesis: str
     positives: list[str]
@@ -288,6 +305,8 @@ class DeepAnalysis(BaseModel):
     verdict: str
     confidence: Literal["low", "medium", "high"]
     citations: list[AnalysisCitation] = Field(default_factory=list)
+    bull_insights: list[InvestmentInsight] = Field(default_factory=list)
+    bear_insights: list[InvestmentInsight] = Field(default_factory=list)
 
 
 class DcfScenario(BaseModel):

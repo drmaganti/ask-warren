@@ -34,7 +34,7 @@ class EvidenceRouter:
     Bull, Bear, Risk and Final analysis.
     """
 
-    VERSION = "1.3"
+    VERSION = "1.4"
 
     def __init__(self, upstream: EvidenceProvider):
         self.upstream = upstream
@@ -92,6 +92,23 @@ def _canonical_url(url: str | None) -> str | None:
 
 def _normalize_text(value: str) -> str:
     return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9]+", " ", value.lower())).strip()
+
+
+_THEME_TERMS = {
+    "demand": ("demand", "traffic", "transaction", "volume", "orders", "bookings", "backlog", "retention", "churn", "market share"),
+    "forecast": ("guidance", "outlook", "forecast", "estimate", "expects", "projected"),
+    "pricing_mix": ("pricing", "price increase", "mix", "average ticket"),
+    "investment_capacity": ("investment", "capital expenditure", "capacity", "new store", "expansion", "hiring", "inventory"),
+    "competition": ("competition", "competitor", "market share"),
+    "legal_regulatory": ("lawsuit", "litigation", "investigation", "regulator", "regulatory", "antitrust", "patent", "court", "settlement"),
+    "earnings_quality": ("margin", "restructuring", "impairment", "tax", "interest", "working capital", "cash flow", "divestiture", "acquisition"),
+    "capital_allocation": ("buyback", "repurchase", "dividend", "debt", "refinancing", "acquisition"),
+}
+
+
+def _themes(text: str) -> list[str]:
+    normalized = _normalize_text(text)
+    return [theme for theme, terms in _THEME_TERMS.items() if any(term in normalized for term in terms)]
 
 
 def _reference(
@@ -388,6 +405,10 @@ def normalize_claims(bundle: EvidenceBundle) -> tuple[list[EvidenceClaim], int]:
         grouped_web[_canonical_url(item.url) or _normalize_text(item.title)].append(item)
     claims.extend(_web_claim(group) for group in grouped_web.values())
 
+    claims = [
+        claim.model_copy(update={"metadata": {**claim.metadata, "themes": _themes(claim.claim)}})
+        for claim in claims
+    ]
     claims.sort(key=lambda claim: (claim.authority_tier, claim.category, claim.id))
     duplicate_count = sum(claim.duplicate_count for claim in claims)
     return claims, duplicate_count

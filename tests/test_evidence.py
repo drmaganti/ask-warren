@@ -21,6 +21,7 @@ from warren.models import (
     TechnicalEvidence,
     WebEvidence,
 )
+from warren.evidence.router import _themes
 
 
 class GoodProvider:
@@ -29,6 +30,12 @@ class GoodProvider:
             news=[NewsEvidence(title="Grounded headline")],
             source_status=[SourceStatus(source="good", status="ok")],
         )
+
+
+def test_evidence_themes_identify_forward_and_legal_signals():
+    themes = _themes("Management lowered demand guidance after a regulatory lawsuit and increased capital expenditure.")
+
+    assert {"demand", "forecast", "legal_regulatory", "investment_capacity"}.issubset(themes)
 
 
 class BadProvider:

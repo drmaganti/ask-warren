@@ -208,7 +208,7 @@ class CachedDeepAnalysisProvider:
     def __init__(self, upstream: DeepAnalysisProvider, ttl_seconds: float = 1800):
         self.upstream = upstream
         self.cache: PersistentTTLCache[tuple[DeepAnalysis, str | None]] = PersistentTTLCache(
-            "analysis-v7-calls",
+            "analysis-v8-structured-insights",
             ttl_seconds,
             lambda value: {"analysis": _model_encoder(value[0]), "model": value[1]},
             lambda value: (DeepAnalysis.model_validate(value["analysis"]), value.get("model")),

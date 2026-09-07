@@ -9,6 +9,7 @@ from warren.models import (
     DeepAnalysis,
     EvidenceBundle,
     EvidenceClaim,
+    InvestmentInsight,
     MetricSnapshot,
     NewsEvidence,
     SourceStatus,
@@ -105,6 +106,17 @@ class FakeDeepAnalysis:
                     AnalysisCitation(section="thesis", item_index=0, claim_ids=["claim-real", "invented"]),
                     AnalysisCitation(section="bull_case", item_index=5, claim_ids=["claim-real"]),
                 ],
+                bull_insights=[InvestmentInsight(
+                    headline="Test insight",
+                    finding="Supported finding",
+                    cause="Supported cause",
+                    durability="recurring",
+                    time_horizon="medium_term",
+                    investor_implication="Future implication",
+                    what_to_watch=["Observable signal"],
+                    confidence="medium",
+                    claim_ids=["claim-real", "invented"],
+                )],
             ),
             "fake-model",
         )
@@ -155,6 +167,7 @@ async def test_deep_collects_and_passes_evidence_once():
     assert deep.last_evidence.news[0].title == "Test headline"
     assert len(response.analysis.citations) == 1
     assert response.analysis.citations[0].claim_ids == ["claim-real"]
+    assert response.analysis.bull_insights[0].claim_ids == ["claim-real"]
 
 
 @pytest.mark.asyncio

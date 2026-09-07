@@ -165,6 +165,7 @@ Values above are schema examples, not live financial data.
 - `news` currently contains source-attributed headlines only. It does not mean Warren has retrieved full article text.
 - `estimate_revisions` and `earnings_history` contain structured Yahoo/yfinance values when available.
 - `earnings_call_qa` contains a bounded set of material analyst questions and management-answer excerpts when `ALPHA_VANTAGE_API_KEY` is available. The latest company fiscal quarter is queried first, fallback discovery is capped at four quarters, requests follow free-tier pacing, and raw transcripts are not retained.
+- `analysis.bull_insights` and `analysis.bear_insights` are the primary investor-facing thesis objects. Each contains a headline, finding, supported cause, durability, time horizon, investor implication, monitoring signals, optional catalyst, qualitative likelihood and impact, confidence, and supporting claim IDs. The legacy `bull_case` and `bear_case` string arrays remain in the response for compatibility.
 - `macro` contains configured FRED series when `FRED_API_KEY` is available.
 - `source_status` is part of the research result. Clients should surface unavailable/error states rather than hiding them.
 

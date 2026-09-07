@@ -94,4 +94,11 @@ async def test_deterministic_provider_returns_public_verdict_vocabulary():
     assert {citation.section for citation in analysis.citations} == {"bull_case", "bear_case"}
     assert "/100" not in analysis.thesis
     assert analysis.bear_case
-    assert model == "deterministic-v1.1"
+    assert analysis.bull_insights
+    assert analysis.bear_insights
+    assert all(item.investor_implication for item in analysis.bull_insights + analysis.bear_insights)
+    assert all(item.what_to_watch for item in analysis.bull_insights + analysis.bear_insights)
+    assert all(item.time_horizon != "unresolved" for item in analysis.bull_insights + analysis.bear_insights)
+    assert any("future" in item.investor_implication.lower() for item in analysis.bull_insights)
+    assert any(item.impact == "high" for item in analysis.bear_insights)
+    assert model == "deterministic-v1.2-insights"

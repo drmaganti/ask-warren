@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..models import AnalysisCitation, CategoryScores, DeepAnalysis, EvidenceBundle, MetricSnapshot
+from ..models import AnalysisCitation, CategoryScores, DeepAnalysis, EvidenceBundle, InvestmentInsight, MetricSnapshot
 from .drivers import earnings_bridge
 
 
@@ -351,6 +351,120 @@ class DeterministicDeepAnalysisProvider:
                 ))
         return bullish, bearish
 
+    @classmethod
+    def _structured_insights(
+        cls,
+        metrics: MetricSnapshot,
+        evidence: EvidenceBundle,
+        forward_support: list[tuple[str, str]],
+        forward_caution: list[tuple[str, str]],
+    ) -> tuple[list[InvestmentInsight], list[InvestmentInsight]]:
+        bull: list[InvestmentInsight] = []
+        bear: list[InvestmentInsight] = []
+
+        if forward_support:
+            text, claim_id = forward_support[0]
+            bull.append(InvestmentInsight(
+                headline="Analysts are raising near-term earnings expectations",
+                finding=text.split(" Why it matters:", 1)[0],
+                cause="The structured consensus data shows upward EPS revisions; the operating cause still requires confirmation from guidance and company filings.",
+                durability="unresolved",
+                time_horizon="near_term",
+                investor_implication="If revenue and operating performance begin supporting the higher estimates, future earnings could improve faster than previously expected. Estimate increases without stronger demand would be less durable.",
+                what_to_watch=["Revenue-estimate revisions", "Customer demand or volume", "Management guidance", "Operating margin"],
+                catalyst="The next earnings report and guidance update",
+                likelihood="medium",
+                impact="medium",
+                confidence="medium",
+                claim_ids=[claim_id],
+            ))
+
+        margin = next((x for x in metrics.quarterly_comparisons if x.metric == "quarterly_operating_margin"), None)
+        if margin and any(value is not None and margin.current > value for value in (margin.previous_quarter, margin.year_ago)):
+            finding = cls._comparison_text(metrics, "quarterly_operating_margin") or "Operating margin improved."
+            bull.append(InvestmentInsight(
+                headline="The company is retaining more operating profit from each sales dollar",
+                finding=f"The statements show {finding}.",
+                cause="The available statements establish the margin improvement but do not by themselves identify whether pricing, mix, labor, restructuring or other costs caused it.",
+                durability="unresolved",
+                time_horizon="medium_term",
+                investor_implication="If the higher margin is operational and persists when demand grows, earnings and cash flow can rise faster than revenue. If it came from temporary reductions, the benefit may fade.",
+                what_to_watch=["Operating expense disclosures", "Gross margin", "Revenue and transaction growth", "Operating cash flow"],
+                catalyst="The next filing's margin and operating-expense disclosures",
+                likelihood="medium",
+                impact="medium",
+                confidence="medium",
+            ))
+
+        if forward_caution:
+            text, claim_id = forward_caution[0]
+            bear.append(InvestmentInsight(
+                headline="Revenue expectations indicate that demand still needs to prove itself",
+                finding=text.split(" Why it matters:", 1)[0],
+                cause="Consensus revenue expectations are contracting, but revenue alone cannot distinguish customer demand from currency, pricing, mix or portfolio changes.",
+                durability="unresolved",
+                time_horizon="near_term",
+                investor_implication="If customer volumes remain weak, cost improvements have a ceiling and optimistic earnings expectations become harder to sustain.",
+                what_to_watch=["Customer traffic, transactions or units", "Revenue revisions", "Pricing versus volume", "Management demand guidance"],
+                catalyst="The next revenue forecast and earnings call",
+                likelihood="medium",
+                impact="high",
+                confidence="medium",
+                claim_ids=[claim_id],
+            ))
+
+        bridge = earnings_bridge(metrics)
+        if metrics.revenue_growth is not None and metrics.revenue_growth < 0 and metrics.earnings_growth is not None and metrics.earnings_growth > 0:
+            cause = (
+                f"The statements show operating income changed by {cls._money(bridge['operating_income_change'])}, "
+                f"items below operating income contributed {cls._money(bridge['below_operating_income_change'])}, and the tax-expense effect was {cls._money(bridge['tax_expense_effect'])}. "
+                "Primary-source attribution is still required before those contributions can be classified as recurring."
+                if bridge.get("status") == "available" else
+                "The available metrics show the divergence, but aligned statement data is missing, so the operating and non-operating causes cannot yet be separated."
+            )
+            bear.append(InvestmentInsight(
+                headline="Profit growth is running ahead of sales growth",
+                finding=f"Revenue growth was {cls._pct(metrics.revenue_growth)} while earnings growth was {cls._pct(metrics.earnings_growth)}.",
+                cause=cause,
+                durability="unresolved",
+                time_horizon="medium_term",
+                investor_implication="The earnings recovery is not yet confirmed by top-line growth. Its durability depends on whether the improvement came from repeatable operations rather than taxes, transactions or finite cost reductions.",
+                what_to_watch=["Revenue growth", "Operating income", "Tax and other-income disclosures", "Free cash flow"],
+                catalyst="The next income statement, cash-flow statement and explanatory filing notes",
+                likelihood="high",
+                impact="high",
+                confidence="medium" if bridge.get("status") == "available" else "low",
+            ))
+
+        if metrics.trailing_pe is not None and metrics.trailing_pe >= 35:
+            bear.append(InvestmentInsight(
+                headline="The valuation leaves limited room for execution disappointment",
+                finding=f"The shares trade at {metrics.trailing_pe:.1f}x trailing earnings" + (f" and {metrics.forward_pe:.1f}x forward earnings." if metrics.forward_pe is not None else "."),
+                cause="The market is assigning a demanding earnings multiple, which implies confidence in future growth, margin durability or both.",
+                durability="recurring",
+                time_horizon="medium_term",
+                investor_implication="Even improving results may not support the share price if growth or margins fall short of the expectations embedded in the multiple.",
+                what_to_watch=["Forward earnings estimates", "Revenue growth", "Operating margin", "Valuation after earnings updates"],
+                catalyst="Earnings releases and material estimate revisions",
+                likelihood="medium",
+                impact="high",
+                confidence="high",
+            ))
+
+        if not bull and metrics.free_cash_flow is not None and metrics.free_cash_flow > 0:
+            bull.append(InvestmentInsight(
+                headline="Positive cash generation provides strategic flexibility",
+                finding=f"The company generated {cls._money(metrics.free_cash_flow)} of free cash flow.",
+                cause="The available cash-flow data confirms positive cash generation, but its recurring operating drivers require filing-level attribution.",
+                durability="unresolved",
+                time_horizon="medium_term",
+                investor_implication="Sustained cash generation can fund reinvestment, debt reduction or shareholder returns without relying on new financing.",
+                what_to_watch=["Free cash flow across subsequent quarters", "Working capital", "Capital expenditure", "Net debt"],
+                confidence="medium",
+            ))
+
+        return bull[:4], bear[:4]
+
     async def analyze(
         self,
         metrics: MetricSnapshot,
@@ -398,6 +512,9 @@ class DeterministicDeepAnalysisProvider:
         technical_support, technical_caution = self._technical_context(evidence)
         insider_support, insider_caution = self._insider_context(evidence)
         forward_support, forward_caution = self._forward_estimate_context(evidence)
+        bull_insights, bear_insights = self._structured_insights(
+            metrics, evidence, forward_support, forward_caution
+        )
 
         bull_case = [item for item, _ in forward_support[:1]] + positives[:2]
         bull_case.extend(technical_support[:1])
@@ -486,6 +603,8 @@ class DeterministicDeepAnalysisProvider:
                 verdict=verdict,
                 confidence=confidence,
                 citations=citations,
+                bull_insights=bull_insights,
+                bear_insights=bear_insights,
             ),
-            "deterministic-v1.1",
+            "deterministic-v1.2-insights",
         )

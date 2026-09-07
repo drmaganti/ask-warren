@@ -74,7 +74,13 @@ class GeminiDeepAnalysisProvider:
             "evidence when available. State the condition that must hold for the future claim to be true. Never invent an "
             "industry or peer benchmark. Treat earnings_call claims as Q&A excerpts: identify the analyst's underlying concern, "
             "whether management answered it directly, and the implication for future demand or earnings. Do not infer honesty, "
-            "emotion or tone. Cite the earnings-call claim for every call-derived point."
+            "emotion or tone. Cite the earnings-call claim for every call-derived point. Build bull_insights and bear_insights "
+            "as competing investment theses, not metric summaries. Every insight must contain a plain-language headline, finding, "
+            "supported cause, durability, time horizon, investor implication, concrete monitoring items, qualitative likelihood and "
+            "impact, confidence, and exact supporting claim IDs. Numbers support the interpretation; they are not the headline. "
+            "If the cause or horizon is not established, use unresolved and name the missing evidence. Use industry-specific demand "
+            "drivers when supplied by the evidence; otherwise do not invent them. A lawsuit or regulatory event belongs in Bear only "
+            "when its potential financial or strategic materiality can be explained."
         )
 
         final_prompt = f"""You are Warren's investment research evaluator. {shared}
@@ -97,6 +103,6 @@ Do not output buy, hold, sell, strong buy, neutral, outperform, underperform or 
 For every conclusion that relies on evidence.claims, add a citation entry. Use only claim IDs present in the packet. item_index is zero-based; use 0 for thesis. Do not cite a claim merely because it is topically related, and do not cite deterministic metrics or scores as evidence claims.
 
 Return JSON only with exactly:
-{{"thesis":"string","positives":[3-5 strings],"concerns":[3-5 strings],"bull_case":[2-4 strings],"bear_case":[2-4 strings],"risks":[2-5 strings],"what_would_change_view":[2-4 strings],"verdict":"attractive|watch|avoid","confidence":"low|medium|high","citations":[{{"section":"thesis|positives|concerns|bull_case|bear_case|risks|what_would_change_view","item_index":0,"claim_ids":["exact-claim-id"]}}]}}."""
+{{"thesis":"string","positives":[3-5 strings],"concerns":[3-5 strings],"bull_case":[2-4 concise strings],"bear_case":[2-4 concise strings],"risks":[2-5 strings],"what_would_change_view":[2-4 strings],"verdict":"attractive|watch|avoid","confidence":"low|medium|high","citations":[{{"section":"thesis|positives|concerns|bull_case|bear_case|risks|what_would_change_view","item_index":0,"claim_ids":["exact-claim-id"]}}],"bull_insights":[{{"headline":"string","finding":"string","cause":"string","durability":"recurring|temporary|one_time|unresolved","time_horizon":"near_term|medium_term|long_term|unresolved","investor_implication":"string","what_to_watch":["observable signal"],"catalyst":"string or null","likelihood":"low|medium|high|unresolved","impact":"low|medium|high|unresolved","confidence":"low|medium|high","claim_ids":["exact-claim-id"]}}],"bear_insights":[{{"headline":"string","finding":"string","cause":"string","durability":"recurring|temporary|one_time|unresolved","time_horizon":"near_term|medium_term|long_term|unresolved","investor_implication":"string","what_to_watch":["observable signal"],"catalyst":"string or null","likelihood":"low|medium|high|unresolved","impact":"low|medium|high|unresolved","confidence":"low|medium|high","claim_ids":["exact-claim-id"]}}]}}."""
         final = await self._generate(final_prompt)
         return DeepAnalysis.model_validate(final), self.model

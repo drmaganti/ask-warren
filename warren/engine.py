@@ -38,7 +38,21 @@ def validate_analysis_citations(analysis: DeepAnalysis, evidence: EvidenceBundle
         claim_ids = list(dict.fromkeys(claim_id for claim_id in citation.claim_ids if claim_id in valid_claim_ids))
         if claim_ids:
             cleaned.append(citation.model_copy(update={"claim_ids": claim_ids}))
-    return analysis.model_copy(update={"citations": cleaned})
+    def clean_insights(items):
+        return [
+            item.model_copy(update={
+                "claim_ids": list(dict.fromkeys(
+                    claim_id for claim_id in item.claim_ids if claim_id in valid_claim_ids
+                ))
+            })
+            for item in items
+        ]
+
+    return analysis.model_copy(update={
+        "citations": cleaned,
+        "bull_insights": clean_insights(analysis.bull_insights),
+        "bear_insights": clean_insights(analysis.bear_insights),
+    })
 
 
 class Warren:
