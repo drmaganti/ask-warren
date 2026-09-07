@@ -243,6 +243,12 @@ When `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are configured, fre
 
 The Vercel Upstash integration supplies these variables automatically. `KV_REST_API_URL` and `KV_REST_API_TOKEN` are also accepted for compatibility. Keep all Redis credentials server-side and out of Git.
 
+### SEC EDGAR relay
+
+SEC may reject requests from shared Vercel serverless addresses even when Ask Warren supplies a compliant identifying User-Agent. When that happens, Ask Warren immediately uses Yahoo Finance's byte-for-byte SEC filing mirror so the current analysis can finish and adds the ticker to an Upstash queue. The free `SEC EDGAR relay` GitHub Action checks that queue every 15 minutes, retrieves official submissions and XBRL facts directly from SEC endpoints, and stores them in Redis for six hours. The next analysis then reports `official EDGAR scheduled relay` rather than a mirror fallback.
+
+Configure these GitHub Actions repository secrets: `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, and `SEC_USER_AGENT`. The first two must point to the same Upstash Redis database used by Vercel. `SEC_USER_AGENT` must identify Ask Warren and contain a real contact email. Relayed SEC payloads expire automatically, processed queue entries are removed, and at most 25 queued tickers are refreshed per run to respect SEC fair-access limits and the free storage tier.
+
 ### SEC filing RAG
 
 When `UPSTASH_VECTOR_REST_URL` and `UPSTASH_VECTOR_REST_TOKEN` are configured, Deep mode retrieves citation-ready passages from the latest and prior annual and quarterly SEC filings. Ask Warren downloads the primary SEC documents, retains a small set of material-risk and business-change chunks, replaces the ticker's prior vector corpus, and retrieves passages relevant to changes in risks, demand, competition, margins, liquidity, capital allocation and management outlook.

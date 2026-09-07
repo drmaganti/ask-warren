@@ -62,6 +62,24 @@ class RedisJSONStore:
             # Persistence is an optimization; upstream analysis must remain available.
             return
 
+    def sadd(self, key: str, value: str) -> None:
+        try:
+            self._command("SADD", key, value)
+        except (httpx.HTTPError, RuntimeError, ValueError, TypeError):
+            return
+
+    def smembers(self, key: str) -> list[str]:
+        try:
+            return [str(value) for value in (self._command("SMEMBERS", key) or [])]
+        except (httpx.HTTPError, RuntimeError, ValueError, TypeError):
+            return []
+
+    def srem(self, key: str, value: str) -> None:
+        try:
+            self._command("SREM", key, value)
+        except (httpx.HTTPError, RuntimeError, ValueError, TypeError):
+            return
+
 
 class TTLCache(Generic[K, V]):
     """Small thread-safe TTL cache for warm serverless instances."""

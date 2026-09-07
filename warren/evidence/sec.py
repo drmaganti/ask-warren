@@ -7,6 +7,7 @@ from datetime import date
 import httpx
 import yfinance as yf
 
+from ..cache import RedisJSONStore
 from ..models import EvidenceBundle, FilingEvidence, MetricSnapshot, SecFactEvidence, SourceStatus
 
 
@@ -56,6 +57,19 @@ class SecFilingEvidenceProvider:
         )
         self.timeout = timeout
         self._ticker_map: dict[str, tuple[int, str]] | None = None
+        self.relay_store = RedisJSONStore.from_env()
+
+    @staticmethod
+    def _relay_key(symbol: str) -> str:
+        return f"ask-warren:v1:sec-relay:{symbol}:fresh"
+
+    @staticmethod
+    def _relay_queue_key() -> str:
+        return "ask-warren:v1:sec-relay:queue"
+
+    def _queue_relay(self, symbol: str) -> None:
+        if self.relay_store is not None:
+            self.relay_store.sadd(self._relay_queue_key(), symbol)
 
     def _client(self) -> httpx.Client:
         return httpx.Client(
@@ -185,6 +199,52 @@ class SecFilingEvidenceProvider:
             seen_labels.add(label)
         return results
 
+    def _official_bundle(
+        self,
+        cik: int,
+        sec_name: str,
+        submissions: dict,
+        company_facts: dict | None,
+        *,
+        transport: str,
+    ) -> EvidenceBundle:
+        bundle = EvidenceBundle()
+        if company_facts:
+            bundle.sec_facts = self._extract_company_facts(company_facts, cik)
+        recent = (submissions.get("filings") or {}).get("recent") or {}
+        forms = recent.get("form") or []
+        filed = recent.get("filingDate") or []
+        accessions = recent.get("accessionNumber") or []
+        documents = recent.get("primaryDocument") or []
+        total = min(len(forms), len(filed), len(accessions), len(documents))
+        for idx in range(total):
+            form = str(forms[idx] or "")
+            if form not in self.FORMS:
+                continue
+            accession = str(accessions[idx] or "")
+            document = str(documents[idx] or "")
+            accession_path = accession.replace("-", "")
+            url = (
+                f"https://www.sec.gov/Archives/edgar/data/{cik}/{accession_path}/{document}"
+                if accession_path and document else None
+            )
+            bundle.filings.append(FilingEvidence(
+                form=form,
+                filed_at=self._parse_date(str(filed[idx] or "")),
+                accession_number=accession or None,
+                primary_document=document or None,
+                url=url,
+            ))
+            if len(bundle.filings) >= self.max_filings:
+                break
+        bundle.metadata.update({"sec_cik": cik, "sec_company_name": sec_name, "sec_filing_transport": transport})
+        bundle.source_status.append(SourceStatus(
+            source="SEC EDGAR",
+            status="ok" if bundle.filings and bundle.sec_facts else "partial",
+            detail=f"{len(bundle.filings)} recent material filings and {len(bundle.sec_facts)} latest XBRL facts returned via {transport}",
+        ))
+        return bundle
+
     def fetch_evidence(self, ticker: str, metrics: MetricSnapshot) -> EvidenceBundle:
         symbol = ticker.strip().upper()
         bundle = EvidenceBundle()
@@ -199,6 +259,20 @@ class SecFilingEvidenceProvider:
             )
             return bundle
 
+        if self.relay_store is not None:
+            relayed = self.relay_store.get(self._relay_key(symbol))
+            if relayed:
+                try:
+                    return self._official_bundle(
+                        int(relayed["cik"]),
+                        str(relayed.get("sec_name") or metrics.company_name or symbol),
+                        relayed["submissions"],
+                        relayed.get("company_facts"),
+                        transport="official EDGAR scheduled relay",
+                    )
+                except (KeyError, TypeError, ValueError):
+                    pass
+
         with self._client() as client:
             try:
                 mapping = self._load_ticker_map(client)
@@ -210,6 +284,7 @@ class SecFilingEvidenceProvider:
                 if fallback_cik is not None:
                     company = (fallback_cik, metrics.company_name or symbol)
             if company is None:
+                self._queue_relay(symbol)
                 bundle.source_status.append(
                     SourceStatus(
                         source="SEC EDGAR",
@@ -225,49 +300,14 @@ class SecFilingEvidenceProvider:
                 response.raise_for_status()
                 payload = response.json()
             except (httpx.HTTPError, ValueError, TypeError):
+                self._queue_relay(symbol)
                 return self._yahoo_filing_mirror(symbol)
+            facts_payload: dict | None = None
             try:
                 facts_response = client.get(self.COMPANY_FACTS_URL.format(cik=cik))
                 facts_response.raise_for_status()
-                bundle.sec_facts = self._extract_company_facts(facts_response.json(), cik)
+                facts_payload = facts_response.json()
             except (httpx.HTTPError, ValueError, TypeError):
-                bundle.sec_facts = []
+                facts_payload = None
 
-        recent = (payload.get("filings") or {}).get("recent") or {}
-        forms = recent.get("form") or []
-        filed = recent.get("filingDate") or []
-        accessions = recent.get("accessionNumber") or []
-        documents = recent.get("primaryDocument") or []
-
-        total = min(len(forms), len(filed), len(accessions), len(documents))
-        for idx in range(total):
-            form = str(forms[idx] or "")
-            if form not in self.FORMS:
-                continue
-            accession = str(accessions[idx] or "")
-            document = str(documents[idx] or "")
-            accession_path = accession.replace("-", "")
-            url = None
-            if accession_path and document:
-                url = f"https://www.sec.gov/Archives/edgar/data/{cik}/{accession_path}/{document}"
-            bundle.filings.append(
-                FilingEvidence(
-                    form=form,
-                    filed_at=self._parse_date(str(filed[idx] or "")),
-                    accession_number=accession or None,
-                    primary_document=document or None,
-                    url=url,
-                )
-            )
-            if len(bundle.filings) >= self.max_filings:
-                break
-
-        bundle.metadata.update({"sec_cik": cik, "sec_company_name": sec_name})
-        bundle.source_status.append(
-            SourceStatus(
-                source="SEC EDGAR",
-                status="ok" if bundle.filings and bundle.sec_facts else "partial",
-                detail=f"{len(bundle.filings)} recent material filings and {len(bundle.sec_facts)} latest XBRL facts returned",
-            )
-        )
-        return bundle
+        return self._official_bundle(cik, sec_name, payload, facts_payload, transport="direct EDGAR API")
