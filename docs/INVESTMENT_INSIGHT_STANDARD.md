@@ -42,6 +42,10 @@ Each material Bull or Bear item must contain:
 
 Numbers should support the interpretation rather than serve as the headline. A bullet that only restates values, percentages, scores or labels does not meet this standard.
 
+### Progressive disclosure
+
+The default Bull/Bear view should show only the insight headline and a two-to-three-sentence summary combining the finding with its investor implication. Cause analysis, durability, time horizon, monitoring signals, catalyst, confidence and sources remain available through **View detailed analysis**. This preserves analytical depth without making the primary decision view feel like a report.
+
 ## Bull and Bear as competing theses
 
 The Bull case should describe the strongest supported path to future value creation and the conditions required for it to occur. The Bear case should describe the strongest supported path to disappointment or permanent impairment and the conditions that would make it material.
@@ -189,6 +193,7 @@ Operating margin increased from 9.5% to 12.9% while quarterly revenue declined 1
 The insight experience is not complete until all of the following are true:
 
 - [ ] Bull and Bear contain two to four distinct investment insights rather than metric summaries.
+- [ ] The default view limits each insight to a headline and no more than three summary sentences; supporting analysis is collapsed by default.
 - [ ] Every insight includes a finding, investor implication and what-to-watch condition.
 - [ ] Every causal statement labels durability or explicitly says why durability is unresolved.
 - [ ] Each side includes its strongest supported forward-looking argument when forward evidence exists.

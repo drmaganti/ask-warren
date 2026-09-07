@@ -56,10 +56,11 @@ def test_analyze_page_is_served():
     assert "Missing Information" in response.text
     assert "history.replaceState" in response.text
     assert "Sensitivity" in response.text
-    assert "What the evidence shows" in response.text
-    assert "Investor implication" in response.text
+    assert "What caused it" in response.text
     assert "What to watch" in response.text
     assert "Next decision point" in response.text
+    assert "View detailed analysis" in response.text
+    assert "firstSentences" in response.text
 
 
 def test_methodology_page_is_served():
