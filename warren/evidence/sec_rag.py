@@ -94,7 +94,7 @@ class UpstashVectorClient:
 class SecRagEvidenceProvider:
     """Adds citation-ready full-text SEC passages to normal SEC evidence."""
 
-    cache_namespace = "sec-rag-direct-cik-v3"
+    cache_namespace = "sec-rag-filing-mirror-v4"
     QUERY = (
         "What materially changed in business risks, demand, competition, strategy, margins, "
         "liquidity, capital allocation, guidance, or management's outlook? Explain revenue and earnings changes: "
@@ -156,7 +156,7 @@ class SecRagEvidenceProvider:
     def _download_chunks(self, ticker: str, filing: FilingEvidence) -> list[dict[str, Any]]:
         response = httpx.get(
             filing.url,
-            headers={"User-Agent": os.getenv("SEC_USER_AGENT", "AskWarren/0.8 drmaganti@users.noreply.github.com")},
+            headers={"User-Agent": "AskWarren/0.8"},
             follow_redirects=True,
             timeout=self.timeout,
         )

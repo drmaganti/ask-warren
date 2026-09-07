@@ -132,7 +132,7 @@ Warren builds an explicit `EvidenceBundle` before any LLM reasoning.
 
 Current evidence sources include:
 
-- **SEC EDGAR:** recent material filing metadata (`10-K`, `10-Q`, `8-K`, `20-F`, `40-F`, `6-K` and amendments) for exact US ticker mappings;
+- **Company filings:** recent material SEC filing documents (`10-K`, `10-Q`, `8-K`, `20-F`, `40-F`, `6-K` and amendments) delivered through Yahoo Finance's filing mirror;
 - **Yahoo Finance/yfinance:** recent news headlines;
 - **Yahoo Finance/yfinance:** EPS estimate trend/revision counts and forward earnings/revenue growth fields when available;
 - **Yahoo Finance/yfinance:** recent actual-vs-estimate earnings history;

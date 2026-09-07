@@ -103,7 +103,7 @@ Completed in current v0.3 slice:
 
 - [x] reusable `EvidenceProvider` protocol and typed `EvidenceBundle`;
 - [x] composite evidence collector with per-source failure isolation;
-- [x] official SEC EDGAR recent filing **metadata** provider for exact US ticker mappings;
+- [x] recent SEC filing-document provider through Yahoo Finance's filing mirror;
 - [x] Yahoo recent headline evidence;
 - [x] Yahoo EPS/revenue estimate trends and revision counts;
 - [x] Yahoo recent earnings surprise/history evidence;

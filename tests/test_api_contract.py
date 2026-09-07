@@ -48,7 +48,6 @@ def test_analyze_page_is_served():
     assert "Sources and data quality" in response.text
     assert "Filing insights and recent research" in response.text
     assert "Supporting evidence" in response.text
-    assert "SEC-reported fundamentals" in response.text
     assert "Technical snapshot" in response.text
     assert "Insider activity" in response.text
     assert "Methodology" in response.text

@@ -202,9 +202,6 @@ export FRED_API_KEY="..."
 
 # Optional: latest earnings-call analyst Q&A (free development key available).
 export ALPHA_VANTAGE_API_KEY="..."
-
-# Recommended for production automated SEC access.
-export SEC_USER_AGENT="AskWarren/0.8 your-real-contact-email@domain.com"
 ```
 
 Screen mode does not require an LLM key or evidence-provider keys.
@@ -235,7 +232,7 @@ The decision-first view presents up to six evidence-ranked reasons to own and si
 
 The overview uses the reported analyst low, median and high price targets instead of presenting Ask Warren's DCF as a price prediction. Median is preferred to mean because one unusually high or low analyst target has less influence on it. The targets are explicitly labeled as estimates, linked to Yahoo Finance, and never treated as guarantees. DCF remains available as a deeper scenario-analysis tool.
 
-Forward-looking Bull and Bear arguments use structured analyst growth expectations, estimate changes and revision breadth, plus retrieved guidance and demand evidence when available. “Signals that could change the view” surfaces observable changes such as customer demand, estimate revisions, margins, capital returns, litigation or market positioning—not financial-report calendar dates. Supported arguments carry a source link in the analysis. The detailed supporting evidence, SEC-reported fundamentals and filing/research passages remain available in collapsed sections at the end of the page so the primary conclusion stays readable without hiding its evidence trail.
+Forward-looking Bull and Bear arguments use structured analyst growth expectations, estimate changes and revision breadth, plus retrieved guidance and demand evidence when available. “Signals that could change the view” surfaces observable changes such as customer demand, estimate revisions, margins, capital returns, litigation or market positioning—not financial-report calendar dates. Supported arguments carry a source link in the analysis. Detailed supporting evidence and filing/research passages remain available in collapsed sections at the end of the page so the primary conclusion stays readable without hiding its evidence trail.
 
 When `ALPHA_VANTAGE_API_KEY` is configured, Deep mode also retrieves the newest available earnings-call transcript. Ask Warren derives the company's latest fiscal quarter from market-data metadata, tries that quarter first, and limits fallback discovery to four quarters. Requests are paced for the free tier and successful or unavailable results are cached for seven days. Only material analyst questions and short management-answer excerpts are retained; the raw transcript is not stored. The analysis model may use these excerpts to identify the concern behind a question, assess whether the response addressed it, and connect the exchange to future demand, earnings or execution risk. Confirm licensing before using third-party transcript content in a commercial offering.
 
@@ -243,15 +240,9 @@ When `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are configured, fre
 
 The Vercel Upstash integration supplies these variables automatically. `KV_REST_API_URL` and `KV_REST_API_TOKEN` are also accepted for compatibility. Keep all Redis credentials server-side and out of Git.
 
-### SEC EDGAR relay
-
-SEC may reject requests from shared Vercel serverless addresses even when Ask Warren supplies a compliant identifying User-Agent. When that happens, Ask Warren immediately uses Yahoo Finance's byte-for-byte SEC filing mirror so the current analysis can finish and adds the ticker to an Upstash queue. The free `SEC EDGAR relay` GitHub Action checks that queue every 15 minutes, retrieves official submissions and XBRL facts directly from SEC endpoints, and stores them in Redis for six hours. The next analysis then reports `official EDGAR scheduled relay` rather than a mirror fallback.
-
-Configure these GitHub Actions repository secrets: `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, and `SEC_USER_AGENT`. The first two must point to the same Upstash Redis database used by Vercel. `SEC_USER_AGENT` must identify Ask Warren and contain a real contact email. Relayed SEC payloads expire automatically, processed queue entries are removed, and at most 25 queued tickers are refreshed per run to respect SEC fair-access limits and the free storage tier.
-
 ### SEC filing RAG
 
-When `UPSTASH_VECTOR_REST_URL` and `UPSTASH_VECTOR_REST_TOKEN` are configured, Deep mode retrieves citation-ready passages from the latest and prior annual and quarterly SEC filings. Ask Warren downloads the primary SEC documents, retains a small set of material-risk and business-change chunks, replaces the ticker's prior vector corpus, and retrieves passages relevant to changes in risks, demand, competition, margins, liquidity, capital allocation and management outlook.
+When `UPSTASH_VECTOR_REST_URL` and `UPSTASH_VECTOR_REST_TOKEN` are configured, Deep mode retrieves citation-ready passages from the latest and prior annual and quarterly SEC filings available through Yahoo Finance's filing mirror. Ask Warren retains a small set of material-risk and business-change chunks, replaces the ticker's prior vector corpus, and retrieves passages relevant to changes in risks, demand, competition, margins, liquidity, capital allocation and management outlook.
 
 The vector index uses Upstash-hosted embeddings, so no separate embedding API key is required. Each ticker corpus is replaced rather than appended, and inactive ticker corpora are pruned after 30 days, preventing stale filings from consuming the free storage allowance. If the free vector service is temporarily unavailable or still indexing, Ask Warren returns the same bounded, materiality-ranked filing passages locally and reports the fallback in evidence metadata. RAG is not used for prices, ratios, technicals, estimates or macro observations; those remain structured source data.
 

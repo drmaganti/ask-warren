@@ -134,7 +134,7 @@ Rules:
       }
     ],
     "source_status": [
-      {"source": "SEC EDGAR", "status": "ok", "detail": "..."},
+      {"source": "Company filings", "status": "ok", "detail": "..."},
       {"source": "FRED", "status": "unavailable", "detail": "FRED_API_KEY is not configured; macro evidence skipped."}
     ],
     "metadata": {}

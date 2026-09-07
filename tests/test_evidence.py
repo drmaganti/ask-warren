@@ -272,79 +272,29 @@ def test_sec_does_not_guess_cross_listing_for_tsx():
     bundle = provider.fetch_evidence("RY.TO", MetricSnapshot(ticker="RY.TO"))
 
     assert bundle.filings == []
-    assert bundle.source_status[0].source == "SEC EDGAR"
+    assert bundle.source_status[0].source == "Company filings"
     assert bundle.source_status[0].status == "unavailable"
 
 
-def test_sec_can_resolve_cik_from_yahoo_when_sec_ticker_map_is_blocked(monkeypatch):
+def test_sec_uses_filing_mirror_without_exposing_transport_failure(monkeypatch):
     class Stock:
-        sec_filings = [{"edgarUrl": "https://www.sec.gov/Archives/edgar/data/909832/0000909832-26-000060_909832"}]
+        sec_filings = [{
+            "type": "10-Q",
+            "date": date(2026, 6, 1),
+            "edgarUrl": "https://www.sec.gov/Archives/edgar/data/909832/0000909832-26-000060_909832",
+            "exhibits": {"10-Q": "https://cdn.example.com/cost-20260601.htm"},
+        }]
 
     monkeypatch.setattr("warren.evidence.sec.yf.Ticker", lambda symbol: Stock())
 
-    assert SecFilingEvidenceProvider._resolve_cik_from_yahoo("COST") == 909832
-
-
-def test_sec_rejects_placeholder_user_agent_contact():
-    provider = SecFilingEvidenceProvider(user_agent="AskWarren contact@example.com")
-
-    assert "example.com" not in provider.user_agent
-    assert "@" in provider.user_agent
-
-
-def test_sec_uses_fresh_official_relay_payload_before_live_network():
-    class Relay:
-        def get(self, key):
-            return {
-                "cik": 909832,
-                "sec_name": "Costco Wholesale Corporation",
-                "submissions": {"filings": {"recent": {
-                    "form": ["10-Q"],
-                    "filingDate": ["2026-06-01"],
-                    "accessionNumber": ["0000909832-26-000001"],
-                    "primaryDocument": ["cost-20260601.htm"],
-                }}},
-                "company_facts": {"facts": {"us-gaap": {"NetIncomeLoss": {"units": {"USD": [
-                    {"val": 10, "end": "2026-05-31", "filed": "2026-06-01", "form": "10-Q", "fp": "Q3", "accn": "0000909832-26-000001"}
-                ]}}}}},
-            }
-
     provider = SecFilingEvidenceProvider()
-    provider.relay_store = Relay()
-
     bundle = provider.fetch_evidence("COST", MetricSnapshot(ticker="COST"))
 
     assert bundle.source_status[0].status == "ok"
-    assert "official EDGAR scheduled relay" in bundle.source_status[0].detail
-    assert bundle.filings[0].url.startswith("https://www.sec.gov/Archives/")
-    assert bundle.sec_facts[0].label == "Net income"
-
-
-def test_sec_extracts_latest_structured_xbrl_facts():
-    payload = {
-        "facts": {
-            "us-gaap": {
-                "RevenueFromContractWithCustomerExcludingAssessedTax": {
-                    "units": {
-                        "USD": [
-                            {"val": 90, "end": "2025-12-31", "filed": "2026-02-01", "form": "10-K", "fp": "FY", "accn": "0001-26-000001"},
-                            {"val": 100, "end": "2026-06-30", "filed": "2026-08-01", "form": "10-Q", "fp": "Q2", "accn": "0001-26-000002"},
-                        ]
-                    }
-                },
-                "NetIncomeLoss": {
-                    "units": {"USD": [{"val": 12, "end": "2026-06-30", "filed": "2026-08-01", "form": "10-Q", "fp": "Q2", "accn": "0001-26-000002"}]}
-                },
-            }
-        }
-    }
-
-    facts = SecFilingEvidenceProvider._extract_company_facts(payload, 1)
-
-    assert [fact.label for fact in facts] == ["Revenue", "Net income"]
-    assert facts[0].value == 100
-    assert facts[0].period_end == date(2026, 6, 30)
-    assert facts[0].source == "SEC EDGAR XBRL"
+    assert bundle.source_status[0].source == "Company filings"
+    assert bundle.source_status[0].detail == "1 recent SEC filing documents available."
+    assert bundle.filings[0].url == "https://cdn.example.com/cost-20260601.htm"
+    assert bundle.metadata["filing_transport"] == "Yahoo Finance SEC filing mirror"
 
 
 def test_sec_rag_replaces_ticker_corpus_and_returns_primary_passages():

@@ -10,33 +10,24 @@ This document describes the initial v0.3 evidence sources and the boundaries War
 4. Distinguish source authority from retrieval depth.
 5. Keep providers replaceable so a production/licensed feed can be introduced later.
 
-## SEC EDGAR
+## Company filings
 
 Provider: `SecFilingEvidenceProvider`
 
-Official references:
-
-- https://www.sec.gov/search-filings/edgar-application-programming-interfaces
-- https://www.sec.gov/search-filings/edgar-search-assistance/accessing-edgar-data
-
 Current use:
 
-- exact ticker-to-CIK mapping from SEC's published ticker association file;
-- recent submissions metadata from `data.sec.gov`;
+- recent SEC filing documents exposed through Yahoo Finance's filing mirror;
 - selected forms: `10-K`, `10-Q`, `8-K`, `20-F`, `40-F`, `6-K` and amendments;
-- form, filing date, accession number, primary document name and EDGAR URL.
-- latest structured US-GAAP XBRL facts for revenue, earnings, operating cash flow, capital expenditures, assets, liabilities, equity, stock compensation and shares when reported;
-- fiscal period, period end, filing date and accession provenance for every returned XBRL fact.
+- form, filing date, accession number and document URL;
+- full-text extraction and retrieval of material passages through the filing RAG provider.
 
 Authentication:
 
-- no API key;
-- automated clients should use an identifying `User-Agent`;
-- configure `SEC_USER_AGENT` for production deployments.
+- no API key.
 
 Important limitation:
 
-Warren retrieves filing metadata and selected structured XBRL facts, but **not filing narrative text**. Deep may use returned XBRL values as primary-source structured evidence. It may not claim what management, risk factors, MD&A or guidance say unless filing text is retrieved separately.
+The mirror avoids unreliable direct requests from shared serverless addresses, but it is still an intermediary and has no production SLA. Ask Warren retrieves and cites filing text when available; absence of a filing passage must not be treated as evidence that a risk or event does not exist.
 
 Canadian `.TO` symbols are not automatically mapped to a possible US cross-listing because Warren should not guess ticker identity.
 

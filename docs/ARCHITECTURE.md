@@ -184,7 +184,7 @@ Persistent cross-instance caching is implemented through Upstash Redis. Event-dr
 
 SEC RAG remains separate from structured market data. On refresh, the provider downloads comparable primary filings, selects a bounded set of material sections, replaces that ticker's vector corpus, prunes inactive corpora after 30 days, and retrieves full-text passages for the evidence router. Retrieved SEC passages receive authority tier 1 and `full_text` depth; ordinary web results remain excerpt-level evidence.
 
-When EDGAR blocks a serverless address, the provider uses Yahoo Finance's SEC filing-document mirror and records that transport in metadata. When vector indexing is temporarily unavailable or not yet consistent, it returns the already-downloaded materiality-ranked passages and records the retrieval fallback rather than silently dropping primary-document evidence.
+The provider uses Yahoo Finance's SEC filing-document mirror so filing retrieval remains reliable from shared serverless addresses. When vector indexing is temporarily unavailable or not yet consistent, it returns the already-downloaded materiality-ranked passages and records the retrieval fallback rather than silently dropping filing evidence.
 
 ## Failure behavior
 

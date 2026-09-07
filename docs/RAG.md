@@ -85,7 +85,7 @@ The implementation applies the following safeguards:
 - Retrieved passages remain attached to their filing metadata and URL.
 - Retrieval failures are reported in `source_status` and `evidence.metadata.sec_rag`.
 - A temporary vector-service failure does not discard already-downloaded evidence; Ask Warren returns the same bounded, materiality-ranked passages locally and reports that fallback.
-- If EDGAR rejects a serverless address, Ask Warren may use Yahoo Finance's SEC-document mirror and records that transport explicitly.
+- Ask Warren uses Yahoo Finance's SEC-document mirror to retrieve filing documents reliably from serverless environments and records that transport explicitly.
 
 ## What RAG does not guarantee
 
@@ -94,7 +94,7 @@ RAG improves grounding; it does not make the analysis infallible.
 - A relevant passage may fall outside the bounded chunk set.
 - Retrieval relevance does not prove that an interpretation is correct.
 - Filing disclosures represent management's reporting and may omit developments that occurred after the filing date.
-- Mirrored documents and temporary fallbacks may have different source-authority labels from direct SEC retrieval.
+- Mirrored documents and temporary fallbacks may have different source-authority labels from issuer-hosted documents.
 - The current version retrieves relevant passages but does not yet produce a deterministic, section-by-section redline of every filing change.
 
 For these reasons, Ask Warren exposes provenance, freshness, source status and confidence. RAG evidence should inform an investment decision, not replace review of the underlying filing.
