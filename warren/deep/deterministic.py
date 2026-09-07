@@ -668,6 +668,22 @@ class DeterministicDeepAnalysisProvider:
                 likelihood="medium", impact="medium", confidence="high",
             ))
 
+        quarterly_fcf = next((x for x in metrics.quarterly_comparisons if x.metric == "quarterly_free_cash_flow"), None)
+        if quarterly_fcf and quarterly_fcf.year_ago not in (None, 0) and quarterly_fcf.current < quarterly_fcf.year_ago * 0.95:
+            decline = 1 - quarterly_fcf.current / quarterly_fcf.year_ago
+            bear.append(InvestmentInsight(
+                headline="Cash conversion is weaker than a year ago",
+                lens="earnings_quality",
+                finding=f"Quarterly free cash flow declined {decline * 100:.1f}% from the same quarter last year.",
+                cause="The cash-flow statement shows that less operating cash remained after capital spending than in the comparable prior-year quarter.",
+                durability="unresolved", time_horizon="near_term",
+                investor_implication="Earnings growth is less valuable to shareholders if it does not translate into growing free cash flow.",
+                expectation_gap="A premium share price requires accounting earnings to convert into durable and growing cash generation.",
+                scenario_path="The concern fades if cash conversion recovers; it strengthens if working capital or investment needs continue absorbing a larger share of operating cash.",
+                what_to_watch=["Free-cash-flow conversion", "Working-capital use", "Capital expenditure relative to operating cash flow"],
+                likelihood="medium", impact="medium", confidence="high",
+            ))
+
         capex = next((x for x in metrics.quarterly_comparisons if x.metric == "quarterly_capital_expenditure"), None)
         if capex and capex.year_ago not in (None, 0) and abs(capex.current) > abs(capex.year_ago) * 1.15:
             increase = abs(capex.current) / abs(capex.year_ago) - 1

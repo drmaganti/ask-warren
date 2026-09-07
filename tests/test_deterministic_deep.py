@@ -130,6 +130,7 @@ async def test_deterministic_provider_can_surface_six_strong_reasons_per_side():
         quarterly_comparisons=[
             MetricComparison(metric="quarterly_operating_margin", label="Operating margin", unit="percent", current=.04, previous_quarter=.037, year_ago=.039),
             MetricComparison(metric="quarterly_capital_expenditure", label="Capital expenditure", unit="money", current=-1_400_000_000, year_ago=-1_100_000_000),
+            MetricComparison(metric="quarterly_free_cash_flow", label="Free cash flow", unit="money", current=2_000_000_000, year_ago=2_400_000_000),
         ],
     )
     scores = CategoryScores(fundamentals=73, valuation=29, business_quality=68, growth=90, risk_resilience=75, market_context=62, overall=62)
