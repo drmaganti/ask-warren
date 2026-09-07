@@ -81,6 +81,55 @@ Investment outcomes depend on the difference between business performance and ex
 
 “The business is improving” is incomplete if the price already assumes a stronger recovery. “The business is weakening” is incomplete if the valuation already reflects a severe decline. Bull and Bear should explain this expectations gap whenever evidence allows.
 
+## Time horizons
+
+Every thesis must distinguish the period over which it is expected to matter:
+
+- **Near term:** the next reported quarters and identifiable catalysts;
+- **Medium term:** approximately 12–24 months of execution; and
+- **Long term:** competitive position, reinvestment runway and durable earnings power.
+
+The same evidence can be negative in the near term and positive over a longer period. Ask Warren should explain that tension rather than presenting the arguments as contradictory. When no horizon can be supported, the insight must label it as unresolved.
+
+## Thesis changes and monitoring
+
+Ask Warren should become an evolving investment record rather than a sequence of disconnected reports. When a prior analysis is available, the product should identify:
+
+- new, strengthened, weakened or resolved Bull and Bear insights;
+- changes in guidance, forecasts, estimates and management language;
+- whether previously defined monitoring conditions were met;
+- material changes in valuation without an equivalent business change;
+- new risks, catalysts or contradictory evidence; and
+- changes caused only by fresher data or improved source coverage.
+
+The product must not imply that the thesis changed when only the wording or model changed. Stored analyses therefore require methodology, model, evidence-version and freshness metadata.
+
+## Industry-specific drivers
+
+The shared insight structure must be supplemented by industry-specific driver maps. Examples include:
+
+- **Retail and restaurants:** traffic, transactions, comparable sales, ticket, unit economics and store growth;
+- **Software:** recurring revenue, retention, bookings, remaining performance obligations, customer acquisition and margins;
+- **Banks:** net interest margin, deposit mix, credit quality, provisions and regulatory capital;
+- **Industrials:** orders, backlog, utilization, price-cost spread and input availability;
+- **Pharmaceuticals:** clinical milestones, approvals, patents, exclusivity and pipeline concentration; and
+- **Semiconductors:** units, utilization, inventory, pricing, capital intensity and customer concentration.
+
+The system should use a generic framework when a validated industry map is unavailable and disclose that limitation. It must not force a sector-specific metric onto a company for which it is not economically meaningful.
+
+## Risk priority and catalyst timing
+
+Risks and opportunities should be prioritized using supported qualitative assessments of:
+
+- likelihood;
+- potential financial or strategic impact;
+- time horizon;
+- reversibility;
+- evidence confidence; and
+- the next identifiable catalyst or decision point.
+
+Ask Warren should not invent numerical probabilities. “What to watch” should include a date or event when available, such as the next earnings report, product launch, trial result, regulatory decision, debt maturity, investor day or contract renewal. A high-impact but remote possibility should not be presented as equivalent to a moderate problem that is already occurring.
+
 ## Earnings-quality and causal analysis
 
 Before describing an earnings change as operational improvement or deterioration, Ask Warren should reconcile available income-statement, balance-sheet and cash-flow evidence. It should distinguish:
@@ -147,6 +196,11 @@ The insight experience is not complete until all of the following are true:
 - [ ] Earnings changes distinguish operating, below-operating, tax and cash-flow effects where data permits.
 - [ ] Material legal, regulatory and event risks are assessed for investment impact, not merely mentioned.
 - [ ] Valuation is connected to the future performance required to justify the current price.
+- [ ] Every insight identifies a near-, medium- or long-term horizon, or explicitly marks the horizon unresolved.
+- [ ] Risks and opportunities are prioritized by supported likelihood, impact, reversibility and timing rather than presentation order.
+- [ ] “What to watch” includes an identifiable catalyst or decision point when available.
+- [ ] Industry-specific operating drivers are used where a validated driver map exists; otherwise the generic framework and its limitation are disclosed.
+- [ ] When a prior analysis exists, Ask Warren distinguishes genuine thesis changes from data, source, methodology or wording changes.
 - [ ] Every material insight has clickable, claim-level supporting evidence.
 - [ ] Confidence reflects evidence quality, freshness, agreement and unresolved attribution.
 - [ ] Missing evidence produces a specific research gap, not invented causation or generic hedging.
@@ -172,6 +226,9 @@ Before release, representative analyses should be reviewed across growth, cyclic
 - What are the strongest future demand and earnings signals?
 - What does the valuation require?
 - What could make the Bull or Bear thesis wrong?
+- Over what time horizon should each argument matter?
+- Which catalyst or decision point could resolve the uncertainty?
+- What has changed since the prior analysis, and why?
 - Which source supports each material conclusion?
 
 Target acceptance thresholds for the evaluation set:
@@ -185,12 +242,14 @@ Target acceptance thresholds for the evaluation set:
 
 ## Implementation sequence
 
-1. Define a structured insight schema containing finding, cause, durability, implication, watch items, confidence and citations.
+1. Define a structured insight schema containing finding, cause, durability, time horizon, implication, watch items, catalyst, risk priority, confidence and citations.
 2. Add evidence classification for demand, forecasts, guidance, investment, competition, legal events and earnings-quality drivers.
 3. Build a deterministic causal and expectations layer before narrative generation.
-4. Make Gemini synthesize from the structured insight candidates rather than from an undifferentiated evidence packet.
-5. Bring material insights to the front of the Analyze page and keep detailed evidence expandable.
-6. Add automated and human evaluation fixtures, including contradictory and missing-evidence cases.
+4. Add an initial set of validated industry driver maps, beginning with consumer/retail and software.
+5. Make Gemini synthesize from the structured insight candidates rather than from an undifferentiated evidence packet.
+6. Bring material insights to the front of the Analyze page and keep detailed evidence expandable.
+7. Persist versioned analysis snapshots and explain genuine thesis changes separately from pipeline changes.
+8. Add automated and human evaluation fixtures, including contradictory, stale and missing-evidence cases.
 
 ## Open questions
 
@@ -199,4 +258,5 @@ Target acceptance thresholds for the evaluation set:
 - Should confidence be displayed per insight, only for the overall verdict, or both?
 - How should the UI distinguish management guidance from independent analyst forecasts?
 - Which industry-specific demand indicators deserve dedicated adapters after the cross-industry standard is complete?
-
+- What analysis history should be retained, and for how long, to support thesis-change explanations?
+- Which catalyst dates can be sourced reliably without introducing a paid event-data dependency?
