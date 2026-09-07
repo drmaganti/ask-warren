@@ -227,6 +227,8 @@ Concurrent requests for the same cache key share a single upstream fetch. Indepe
 
 Deterministic results produced as a fallback after a transient Gemini failure are not cached, allowing the next request to retry Gemini instead of preserving a degraded response.
 
+Gemini failures are classified without logging prompts, response bodies or API keys. Source status and structured runtime logs record the safe failure category, exception type and HTTP status when available—for example rate/quota limit (`429`), authentication (`401`), permission (`403`), invalid request (`400`) or temporary provider service failure (`5xx`).
+
 Bull and Bear sections lead with investor-facing findings rather than category scores. Each argument states the observed evidence, explains why it matters and, where compatible quarterly history is available, compares revenue, net income, operating cash flow, free cash flow, gross margin and operating margin with both the previous quarter and the same quarter one year earlier. Margin changes are expressed in percentage points; dollar measures are expressed as percentage changes. Ask Warren does not display an industry or peer average unless the data provider supplies a defined, comparable peer group, so a missing comparison is preferable to a misleading one.
 
 The primary Bull and Bear response is structured into insight cards containing the finding, supported cause, durability, time horizon, investor implication, monitoring signals, next decision point, confidence and clickable evidence. The legacy Bull/Bear strings remain in the API for compatibility. The deterministic fallback produces the same structured experience when model synthesis is unavailable.
