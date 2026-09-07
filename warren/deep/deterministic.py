@@ -274,6 +274,22 @@ class DeterministicDeepAnalysisProvider:
         return supportive, cautious
 
     @staticmethod
+    def _rank_insights(items: list[InvestmentInsight]) -> list[InvestmentInsight]:
+        """Show only the most decision-relevant, well-supported arguments."""
+        weight = {"high": 3, "medium": 2, "low": 1, "unresolved": 0}
+        ranked = sorted(
+            enumerate(items),
+            key=lambda pair: (
+                weight.get(pair[1].impact, 0),
+                weight.get(pair[1].confidence, 0),
+                weight.get(pair[1].likelihood, 0),
+                -pair[0],
+            ),
+            reverse=True,
+        )
+        return [item for _, item in ranked[:4]]
+
+    @staticmethod
     def _insider_context(evidence: EvidenceBundle) -> tuple[list[str], list[str]]:
         supportive: list[str] = []
         cautious: list[str] = []
@@ -367,11 +383,14 @@ class DeterministicDeepAnalysisProvider:
             text, claim_id = forward_support[0]
             bull.append(InvestmentInsight(
                 headline="Analysts are raising near-term earnings expectations",
+                lens="future_demand",
                 finding=text.split(" Why it matters:", 1)[0],
                 cause="The structured consensus data shows upward EPS revisions; the operating cause still requires confirmation from guidance and company filings.",
                 durability="unresolved",
                 time_horizon="near_term",
                 investor_implication="If revenue and operating performance begin supporting the higher estimates, future earnings could improve faster than previously expected. Estimate increases without stronger demand would be less durable.",
+                expectation_gap="The revisions indicate that consensus earnings expectations are moving higher, but the price may already reflect part of that improvement.",
+                scenario_path="The Bull case strengthens if revenue estimates, customer demand and margins improve together; it weakens if EPS rises only through cost reductions.",
                 what_to_watch=["Revenue-estimate revisions", "Customer demand or volume", "Management guidance", "Operating margin"],
                 catalyst="The next earnings report and guidance update",
                 likelihood="medium",
@@ -385,11 +404,14 @@ class DeterministicDeepAnalysisProvider:
             finding = cls._comparison_text(metrics, "quarterly_operating_margin") or "Operating margin improved."
             bull.append(InvestmentInsight(
                 headline="The company is retaining more operating profit from each sales dollar",
+                lens="operating_leverage",
                 finding=f"The statements show {finding}.",
                 cause="The available statements establish the margin improvement but do not by themselves identify whether pricing, mix, labor, restructuring or other costs caused it.",
                 durability="unresolved",
                 time_horizon="medium_term",
                 investor_implication="If the higher margin is operational and persists when demand grows, earnings and cash flow can rise faster than revenue. If it came from temporary reductions, the benefit may fade.",
+                expectation_gap="Durable margin expansion can exceed market expectations when revenue resumes growing, but temporary savings do not justify a lasting rerating.",
+                scenario_path="Margins remain higher as revenue grows in the Bull path; margins retreat when temporary savings end in the failure path.",
                 what_to_watch=["Operating expense disclosures", "Gross margin", "Revenue and transaction growth", "Operating cash flow"],
                 catalyst="The next filing's margin and operating-expense disclosures",
                 likelihood="medium",
@@ -401,11 +423,14 @@ class DeterministicDeepAnalysisProvider:
             text, claim_id = forward_caution[0]
             bear.append(InvestmentInsight(
                 headline="Revenue expectations indicate that demand still needs to prove itself",
+                lens="future_demand",
                 finding=text.split(" Why it matters:", 1)[0],
                 cause="Consensus revenue expectations are contracting, but revenue alone cannot distinguish customer demand from currency, pricing, mix or portfolio changes.",
                 durability="unresolved",
                 time_horizon="near_term",
                 investor_implication="If customer volumes remain weak, cost improvements have a ceiling and optimistic earnings expectations become harder to sustain.",
+                expectation_gap="Current earnings expectations require demand to stabilize; continued revenue contraction would make those expectations harder to achieve.",
+                scenario_path="The Bear path is confirmed if revenue estimates, volumes or transactions continue falling while earnings rely on cost reductions.",
                 what_to_watch=["Customer traffic, transactions or units", "Revenue revisions", "Pricing versus volume", "Management demand guidance"],
                 catalyst="The next revenue forecast and earnings call",
                 likelihood="medium",
@@ -433,11 +458,14 @@ class DeterministicDeepAnalysisProvider:
                 cause = "Aligned statement data is missing, so the analysis cannot yet separate operating improvement from taxes, gains or other non-operating effects."
             bear.append(InvestmentInsight(
                 headline="Profit growth is running ahead of sales growth",
+                lens="earnings_quality",
                 finding=f"Revenue growth was {cls._pct(metrics.revenue_growth)} while earnings growth was {cls._pct(metrics.earnings_growth)}.",
                 cause=cause,
                 durability="unresolved",
                 time_horizon="medium_term",
                 investor_implication="The earnings recovery is not yet confirmed by top-line growth. Its durability depends on whether the improvement came from repeatable operations rather than taxes, transactions or finite cost reductions.",
+                expectation_gap="Investors may be valuing the earnings increase as recurring before the statements establish that the improvement came from repeatable operations.",
+                scenario_path="The concern fades if operating income and cash flow confirm the improvement; it grows if future profit falls after one-time benefits disappear.",
                 what_to_watch=["Revenue growth", "Operating income", "Tax and other-income disclosures", "Free cash flow"],
                 catalyst="The next income statement, cash-flow statement and explanatory filing notes",
                 likelihood="high",
@@ -448,11 +476,14 @@ class DeterministicDeepAnalysisProvider:
         if metrics.trailing_pe is not None and metrics.trailing_pe >= 35:
             bear.append(InvestmentInsight(
                 headline="The valuation leaves limited room for execution disappointment",
+                lens="market_expectations",
                 finding=f"The shares trade at {metrics.trailing_pe:.1f}x trailing earnings" + (f" and {metrics.forward_pe:.1f}x forward earnings." if metrics.forward_pe is not None else "."),
                 cause="The market is assigning a demanding earnings multiple, which implies confidence in future growth, margin durability or both.",
                 durability="recurring",
                 time_horizon="medium_term",
                 investor_implication="Even improving results may not support the share price if growth or margins fall short of the expectations embedded in the multiple.",
+                expectation_gap="The multiple implies sustained growth and margin execution; merely meeting historical performance may not be enough.",
+                scenario_path="A rerating is possible if growth exceeds expectations, while slower growth or lower margins could compress the multiple even if the company remains profitable.",
                 what_to_watch=["Forward earnings estimates", "Revenue growth", "Operating margin", "Valuation after earnings updates"],
                 catalyst="Earnings releases and material estimate revisions",
                 likelihood="medium",
@@ -460,19 +491,66 @@ class DeterministicDeepAnalysisProvider:
                 confidence="high",
             ))
 
+        if evidence.technical:
+            technical = evidence.technical[0]
+            price_extension = (
+                technical.close / technical.sma_50 - 1
+                if technical.close is not None and technical.sma_50 not in (None, 0)
+                else None
+            )
+            volume_ratio = (
+                technical.latest_volume / technical.avg_volume_20
+                if technical.latest_volume is not None and technical.avg_volume_20 not in (None, 0)
+                else None
+            )
+            stretched = (
+                (technical.rsi_14 is not None and technical.rsi_14 >= 70)
+                or (price_extension is not None and price_extension >= 0.12)
+                or (volume_ratio is not None and volume_ratio >= 1.5 and technical.rsi_14 is not None and technical.rsi_14 >= 65)
+            )
+            if stretched:
+                observations = []
+                if technical.rsi_14 is not None:
+                    observations.append(f"14-day RSI is {technical.rsi_14:.1f}")
+                if price_extension is not None:
+                    observations.append(f"the price is {price_extension * 100:.1f}% above its 50-day average")
+                if volume_ratio is not None:
+                    observations.append(f"latest volume is {volume_ratio:.1f}x its 20-day average")
+                finding = "; ".join(observations)
+                finding = finding[:1].upper() + finding[1:] + "."
+                bear.append(InvestmentInsight(
+                    headline="Trading enthusiasm looks stretched",
+                    lens="market_positioning",
+                    finding=finding,
+                    cause="Elevated momentum and trading activity indicate strong near-term investor demand for the shares, not an improvement in the company's underlying cash flows.",
+                    durability="temporary",
+                    time_horizon="near_term",
+                    investor_implication="A crowded or extended trade can fall sharply when results merely meet expectations, even when the long-term business remains strong.",
+                    expectation_gap="The share price may be discounting near-perfect near-term execution while technical momentum leaves less room for incremental buyers.",
+                    scenario_path="The risk recedes if earnings and estimates rise enough to support the price; it increases if momentum reverses after an earnings or guidance disappointment.",
+                    what_to_watch=["RSI returning below 70", "Distance from the 50-day average", "Volume after earnings", "Estimate revisions"],
+                    catalyst="The next earnings report, guidance update or material estimate revision",
+                    likelihood="medium",
+                    impact="medium",
+                    confidence="high",
+                ))
+
         if not bull and metrics.free_cash_flow is not None and metrics.free_cash_flow > 0:
             bull.append(InvestmentInsight(
                 headline="Positive cash generation provides strategic flexibility",
+                lens="capital_allocation",
                 finding=f"The company generated {cls._money(metrics.free_cash_flow)} of free cash flow.",
                 cause="The available cash-flow data confirms positive cash generation, but its recurring operating drivers require filing-level attribution.",
                 durability="unresolved",
                 time_horizon="medium_term",
                 investor_implication="Sustained cash generation can fund reinvestment, debt reduction or shareholder returns without relying on new financing.",
+                expectation_gap="Value creation depends on management earning attractive returns on the cash it retains or returning excess cash responsibly.",
+                scenario_path="The Bull path requires cash to fund profitable reinvestment, debt reduction or disciplined shareholder returns rather than low-return spending.",
                 what_to_watch=["Free cash flow across subsequent quarters", "Working capital", "Capital expenditure", "Net debt"],
                 confidence="medium",
             ))
 
-        return bull[:4], bear[:4]
+        return cls._rank_insights(bull), cls._rank_insights(bear)
 
     async def analyze(
         self,
@@ -613,5 +691,5 @@ class DeterministicDeepAnalysisProvider:
                 bull_insights=bull_insights,
                 bear_insights=bear_insights,
             ),
-            "deterministic-v1.2-insights",
+            "deterministic-v1.3-ranked-lenses",
         )

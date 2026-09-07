@@ -12,6 +12,7 @@ from warren.models import (
     MetricComparison,
     MetricSnapshot,
     SourceStatus,
+    TechnicalEvidence,
 )
 
 
@@ -101,4 +102,36 @@ async def test_deterministic_provider_returns_public_verdict_vocabulary():
     assert all(item.time_horizon != "unresolved" for item in analysis.bull_insights + analysis.bear_insights)
     assert any("future" in item.investor_implication.lower() for item in analysis.bull_insights)
     assert any(item.impact == "high" for item in analysis.bear_insights)
-    assert model == "deterministic-v1.2-insights"
+    assert model == "deterministic-v1.3-ranked-lenses"
+
+
+def test_structured_insights_surface_valuation_and_stretched_trading_when_material():
+    metrics = MetricSnapshot(
+        ticker="NVDA",
+        trailing_pe=55,
+        forward_pe=45,
+        revenue_growth=0.50,
+        earnings_growth=0.60,
+    )
+    evidence = EvidenceBundle(technical=[TechnicalEvidence(
+        close=150,
+        sma_50=120,
+        sma_200=90,
+        rsi_14=76,
+        latest_volume=200_000_000,
+        avg_volume_20=100_000_000,
+    )])
+
+    _, bear = DeterministicDeepAnalysisProvider._structured_insights(
+        metrics, evidence, [], []
+    )
+
+    assert len(bear) <= 4
+    assert {item.lens for item in bear} >= {"market_expectations", "market_positioning"}
+    positioning = next(item for item in bear if item.lens == "market_positioning")
+    assert positioning.headline == "Trading enthusiasm looks stretched"
+    assert "76.0" in positioning.finding
+    assert "25.0% above its 50-day average" in positioning.finding
+    assert "2.0x its 20-day average" in positioning.finding
+    assert positioning.expectation_gap
+    assert positioning.scenario_path

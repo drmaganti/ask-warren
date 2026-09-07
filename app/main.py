@@ -62,7 +62,7 @@ engine = Warren(
 
 app = FastAPI(
     title="Ask Warren Stock Intelligence",
-    version="0.6.2",
+    version="0.7.0",
     description="Standalone stock research experience powered by the reusable Warren engine.",
 )
 
@@ -79,7 +79,7 @@ def health() -> dict[str, str]:
     return {
         "status": "ok",
         "service": "warren",
-        "deep_provider": "gemini" if os.getenv("GEMINI_API_KEY") else "deterministic-v1.2-insights",
+        "deep_provider": "gemini" if os.getenv("GEMINI_API_KEY") else "deterministic-v1.3-ranked-lenses",
         "evidence_router": EvidenceRouter.VERSION,
         "web_discovery": "exa" if os.getenv("EXA_API_KEY") else "disabled",
         "earnings_calls": "alpha-vantage" if os.getenv("ALPHA_VANTAGE_API_KEY") else "disabled",

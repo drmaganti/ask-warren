@@ -281,11 +281,18 @@ class InvestmentInsight(BaseModel):
     """An evidence-backed interpretation presented in Bull or Bear."""
 
     headline: str
+    lens: Literal[
+        "future_demand", "earnings_quality", "operating_leverage",
+        "capital_allocation", "market_expectations", "market_positioning",
+        "company_risk", "other",
+    ] = "other"
     finding: str
     cause: str
     durability: Literal["recurring", "temporary", "one_time", "unresolved"]
     time_horizon: Literal["near_term", "medium_term", "long_term", "unresolved"]
     investor_implication: str
+    expectation_gap: str | None = None
+    scenario_path: str | None = None
     what_to_watch: list[str] = Field(min_length=1)
     catalyst: str | None = None
     likelihood: Literal["low", "medium", "high", "unresolved"] = "unresolved"

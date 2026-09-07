@@ -174,6 +174,12 @@ Material unresolved events belong in Bear or Risks with explicit uncertainty and
 - Internal scores may assist ranking, but must not be presented as evidence or lead the Bull/Bear narrative.
 - The deterministic fallback must meet the same presentation and evidence standard as model-generated analysis.
 
+## Required investment lenses and ranking
+
+Every analysis evaluates future demand, earnings quality, operating leverage, capital allocation, market expectations and valuation, market positioning, and company-specific risk. A lens becomes a visible Bull or Bear insight only when the available evidence supports a decision-relevant conclusion.
+
+Supported candidates are ranked by potential financial impact, likelihood, evidence confidence and relevance to the current price. Only the strongest three or four insights per side are shown. Each expanded insight explains the expectation gap and a plausible success or failure path. Technical extension requires evidence such as RSI, distance from moving averages, Bollinger position or volume relative to its recent average; price appreciation alone is not evidence that a stock is crowded or overtraded.
+
 ## Example
 
 ### Margins improved, but demand has not yet confirmed the turnaround
@@ -203,6 +209,9 @@ The insight experience is not complete until all of the following are true:
 - [ ] Earnings changes distinguish operating, below-operating, tax and cash-flow effects where data permits.
 - [ ] Material legal, regulatory and event risks are assessed for investment impact, not merely mentioned.
 - [ ] Valuation is connected to the future performance required to justify the current price.
+- [ ] Future demand, earnings quality, operating leverage, capital allocation, market expectations, market positioning and company-specific risk are evaluated on every run.
+- [ ] Visible insights are limited to the strongest three or four per side after ranking by impact, likelihood, evidence confidence and decision relevance.
+- [ ] Each expanded insight identifies the expectation gap and a plausible success or failure path when the evidence supports one.
 - [ ] Every insight identifies a near-, medium- or long-term horizon, or explicitly marks the horizon unresolved.
 - [ ] Risks and opportunities are prioritized by supported likelihood, impact, reversibility and timing rather than presentation order.
 - [ ] “What to watch” includes an identifiable catalyst or decision point when available.
