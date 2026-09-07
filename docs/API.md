@@ -164,7 +164,7 @@ Values above are schema examples, not live financial data.
 - `sec_facts` contains selected structured SEC XBRL values with periods, forms and accession references.
 - `news` currently contains source-attributed headlines only. It does not mean Warren has retrieved full article text.
 - `estimate_revisions` and `earnings_history` contain structured Yahoo/yfinance values when available.
-- `earnings_call_qa` contains a bounded set of material analyst questions and management-answer excerpts when `ALPHA_VANTAGE_API_KEY` is available. Raw transcripts are not retained.
+- `earnings_call_qa` contains a bounded set of material analyst questions and management-answer excerpts when `ALPHA_VANTAGE_API_KEY` is available. The latest company fiscal quarter is queried first, fallback discovery is capped at four quarters, requests follow free-tier pacing, and raw transcripts are not retained.
 - `macro` contains configured FRED series when `FRED_API_KEY` is available.
 - `source_status` is part of the research result. Clients should surface unavailable/error states rather than hiding them.
 

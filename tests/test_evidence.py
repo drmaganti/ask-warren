@@ -216,13 +216,22 @@ class StubEarningsCallProvider(AlphaVantageEarningsCallProvider):
         ]}
 
 
-def test_earnings_call_quarter_probe_includes_prior_year():
+def test_earnings_call_quarter_probe_is_bounded_to_four_recent_quarters():
     quarters = AlphaVantageEarningsCallProvider._quarters(datetime(2026, 9, 1, tzinfo=UTC))
 
     assert quarters == [
-        "2026Q4", "2026Q3", "2026Q2", "2026Q1",
-        "2025Q4", "2025Q3", "2025Q2", "2025Q1",
+        "2026Q3", "2026Q2", "2026Q1", "2025Q4",
     ]
+
+
+def test_earnings_call_prefers_company_fiscal_quarter():
+    metrics = MetricSnapshot(
+        ticker="SBUX",
+        most_recent_quarter=date(2025, 6, 29),
+        fiscal_year_end=date(2024, 9, 29),
+    )
+
+    assert AlphaVantageEarningsCallProvider._fiscal_quarter(metrics) == "2025Q3"
 
 
 def test_earnings_call_provider_extracts_material_qa_and_router_cites_it():

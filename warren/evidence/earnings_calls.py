@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import time
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Any
 
 import httpx
@@ -19,7 +19,7 @@ class AlphaVantageEarningsCallProvider:
 
     ENDPOINT = "https://www.alphavantage.co/query"
     SOURCE_URL = "https://www.alphavantage.co/documentation/#earnings-call-transcript"
-    cache_namespace = "alpha-vantage-earnings-calls-v4"
+    cache_namespace = "alpha-vantage-earnings-calls-v5"
     MATERIAL_TERMS = (
         "guidance", "demand", "traffic", "volume", "pricing", "price", "margin",
         "cost", "investment", "return", "growth", "revenue", "earnings", "cash flow",
@@ -35,15 +35,39 @@ class AlphaVantageEarningsCallProvider:
     @staticmethod
     def _quarters(now: datetime | None = None) -> list[str]:
         today = now or datetime.now(UTC)
-        # Fiscal calendars and provider publication dates differ. Probe the
-        # current year first, then the prior year, stopping as soon as a call is
-        # found. The result is cached for a week, so this fallback does not
-        # repeatedly consume the free API allowance.
-        return [
-            f"{year}Q{quarter}"
-            for year in (today.year, today.year - 1)
-            for quarter in (4, 3, 2, 1)
-        ]
+        quarter = min(4, max(1, ((today.month - 1) // 3) + 1))
+        result = []
+        year = today.year
+        for _ in range(4):
+            result.append(f"{year}Q{quarter}")
+            quarter -= 1
+            if quarter == 0:
+                quarter = 4
+                year -= 1
+        return result
+
+    @staticmethod
+    def _fiscal_quarter(metrics: MetricSnapshot) -> str | None:
+        recent = metrics.most_recent_quarter
+        prior_end = metrics.fiscal_year_end
+        if not recent or not prior_end:
+            return None
+        candidates: list[date] = []
+        for year in (recent.year, recent.year + 1):
+            try:
+                candidates.append(prior_end.replace(year=year))
+            except ValueError:
+                candidates.append(date(year, 2, 28))
+        fiscal_end = next((value for value in candidates if 0 <= (value - recent).days <= 370), None)
+        if not fiscal_end:
+            return None
+        quarters_to_end = min(3, max(0, round((fiscal_end - recent).days / 91.25)))
+        return f"{fiscal_end.year}Q{4 - quarters_to_end}"
+
+    def _candidate_quarters(self, metrics: MetricSnapshot) -> list[str]:
+        preferred = self._fiscal_quarter(metrics)
+        fallback = self._quarters()
+        return ([preferred] if preferred else []) + [q for q in fallback if q != preferred][:3]
 
     def _request(self, ticker: str, quarter: str) -> dict[str, Any]:
         response = httpx.get(
@@ -116,7 +140,7 @@ class AlphaVantageEarningsCallProvider:
         symbol = ticker.strip().upper()
         attempted = 0
         try:
-            for quarter in self._quarters():
+            for quarter in self._candidate_quarters(metrics):
                 if attempted:
                     # The free Alpha Vantage tier permits one request per
                     # second. Pace fallback probes to avoid burst throttling.

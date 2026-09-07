@@ -40,6 +40,8 @@ class MetricSnapshot(BaseModel):
     total_debt: float | None = None
     shares_outstanding: float | None = None
     fetched_at: datetime | None = None
+    most_recent_quarter: date | None = None
+    fiscal_year_end: date | None = None
     historical_free_cash_flow: list[float] = Field(default_factory=list)
     quarterly_comparisons: list[MetricComparison] = Field(default_factory=list)
     revenue_growth: float | None = None

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Any
 
 import yfinance as yf
@@ -17,6 +17,19 @@ def _number(value: Any) -> float | None:
     except (TypeError, ValueError):
         return None
     return number if math.isfinite(number) else None
+
+
+def _date_value(value: Any) -> date | None:
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date):
+        return value
+    try:
+        return datetime.fromtimestamp(float(value), timezone.utc).date()
+    except (TypeError, ValueError, OSError):
+        return None
 
 
 class YFinanceMarketDataProvider:
@@ -133,6 +146,8 @@ class YFinanceMarketDataProvider:
             total_debt=_number(info.get("totalDebt")),
             shares_outstanding=_number(info.get("sharesOutstanding")),
             fetched_at=datetime.now(timezone.utc),
+            most_recent_quarter=_date_value(info.get("mostRecentQuarter")),
+            fiscal_year_end=_date_value(info.get("lastFiscalYearEnd")),
             historical_free_cash_flow=historical_fcf,
             quarterly_comparisons=quarterly_comparisons,
             revenue_growth=_number(info.get("revenueGrowth")),
