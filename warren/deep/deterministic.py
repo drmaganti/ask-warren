@@ -360,6 +360,16 @@ class DeterministicDeepAnalysisProvider:
                     "Why it matters: rising estimates suggest that expected future earnings have improved, although estimates can still change.",
                     claim_id,
                 ))
+            elif (
+                item.revenue_growth is not None and item.revenue_growth >= 0.05
+                and item.earnings_growth is not None and item.earnings_growth >= 0.05
+                and item.horizon in {"0y", "+1y"}
+            ):
+                bullish.append((
+                    f"Analysts expect continued growth: for {label}, analysts report {details}. "
+                    "Why it matters: simultaneous revenue and earnings growth would support the operating outlook, although the estimates may already be reflected in the share price.",
+                    claim_id,
+                ))
             if item.revenue_growth is not None and item.revenue_growth < 0:
                 bearish.append((
                     f"Revenue expectations are contracting: for {label}, analysts report {details}. "
@@ -381,11 +391,18 @@ class DeterministicDeepAnalysisProvider:
 
         if forward_support:
             text, claim_id = forward_support[0]
+            raised = text.startswith("Earnings expectations are improving")
             bull.append(InvestmentInsight(
-                headline="Analysts are raising near-term earnings expectations",
+                headline=(
+                    "Analysts are raising near-term earnings expectations"
+                    if raised else "Analysts expect revenue and earnings to keep growing"
+                ),
                 lens="future_demand",
                 finding=text.split(" Why it matters:", 1)[0],
-                cause="The structured consensus data shows upward EPS revisions; the operating cause still requires confirmation from guidance and company filings.",
+                cause=(
+                    "The structured consensus data shows upward EPS revisions; the operating cause still requires confirmation from guidance and company filings."
+                    if raised else "The structured consensus forecast expects both sales and earnings to grow; company guidance and reported results must confirm the operating drivers."
+                ),
                 durability="unresolved",
                 time_horizon="near_term",
                 investor_implication="If revenue and operating performance begin supporting the higher estimates, future earnings could improve faster than previously expected. Estimate increases without stronger demand would be less durable.",
@@ -534,8 +551,38 @@ class DeterministicDeepAnalysisProvider:
                     impact="medium",
                     confidence="high",
                 ))
+            weakening = (
+                technical.close is not None
+                and technical.sma_50 is not None
+                and technical.sma_200 is not None
+                and technical.close < technical.sma_50
+                and technical.close < technical.sma_200
+                and (
+                    technical.rsi_14 is None or technical.rsi_14 < 45
+                )
+            )
+            if weakening:
+                bear.append(InvestmentInsight(
+                    headline="Market momentum is weakening",
+                    lens="market_positioning",
+                    finding=(
+                        f"The shares trade below both the 50-day and 200-day averages"
+                        + (f", while 14-day RSI is {technical.rsi_14:.1f}." if technical.rsi_14 is not None else ".")
+                    ),
+                    cause="Recent selling pressure has been stronger than the stock's intermediate- and long-term price trends, although price action alone does not establish weaker business fundamentals.",
+                    durability="temporary",
+                    time_horizon="near_term",
+                    investor_implication="Weak momentum can amplify a decline if earnings or guidance disappoint, especially when the valuation already requires strong execution.",
+                    expectation_gap="The market may be reducing the premium it is willing to pay before analysts materially lower their published forecasts.",
+                    scenario_path="Momentum can recover if results exceed expectations; the risk increases if estimates fall while the price remains below both averages.",
+                    what_to_watch=["Price versus the 50-day average", "Price versus the 200-day average", "RSI", "Estimate revisions"],
+                    catalyst="The next earnings report or material estimate revision",
+                    likelihood="medium",
+                    impact="medium",
+                    confidence="high",
+                ))
 
-        if not bull and metrics.free_cash_flow is not None and metrics.free_cash_flow > 0:
+        if metrics.free_cash_flow is not None and metrics.free_cash_flow > 0:
             bull.append(InvestmentInsight(
                 headline="Positive cash generation provides strategic flexibility",
                 lens="capital_allocation",

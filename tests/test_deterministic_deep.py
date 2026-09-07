@@ -135,3 +135,57 @@ def test_structured_insights_surface_valuation_and_stretched_trading_when_materi
     assert "2.0x its 20-day average" in positioning.finding
     assert positioning.expectation_gap
     assert positioning.scenario_path
+
+
+def test_fallback_produces_multiple_supported_insights_when_model_is_unavailable():
+    metrics = MetricSnapshot(
+        ticker="COST",
+        free_cash_flow=6_900_000_000,
+        trailing_pe=46,
+        forward_pe=40,
+        revenue_growth=0.21,
+        earnings_growth=0.45,
+        quarterly_comparisons=[MetricComparison(
+            metric="quarterly_operating_margin",
+            label="Quarterly operating margin",
+            unit="percent",
+            current=0.038,
+            year_ago=0.035,
+        )],
+    )
+    claim = EvidenceClaim(
+        id="estimate_revision:cost",
+        category="estimate_revision",
+        claim="Consensus expects annual revenue and earnings growth.",
+        authority_tier=2,
+        retrieval_depth="structured",
+        confidence="high",
+        references=[EvidenceReference(source="Yahoo Finance", authority_tier=2, retrieval_depth="structured")],
+        metadata={"horizon": "0y"},
+    )
+    evidence = EvidenceBundle(
+        estimate_revisions=[EstimateRevisionEvidence(
+            horizon="0y",
+            eps_current=20.58,
+            eps_30d_ago=20.59,
+            earnings_growth=0.13,
+            revenue_growth=0.096,
+        )],
+        technical=[TechnicalEvidence(
+            close=916,
+            sma_50=944,
+            sma_200=960,
+            rsi_14=37.5,
+        )],
+        claims=[claim],
+    )
+    forward_support, forward_caution = DeterministicDeepAnalysisProvider._forward_estimate_context(evidence)
+
+    bull, bear = DeterministicDeepAnalysisProvider._structured_insights(
+        metrics, evidence, forward_support, forward_caution
+    )
+
+    assert len(bull) >= 3
+    assert {item.lens for item in bull} >= {"future_demand", "operating_leverage", "capital_allocation"}
+    assert len(bear) >= 2
+    assert {item.lens for item in bear} >= {"market_expectations", "market_positioning"}
