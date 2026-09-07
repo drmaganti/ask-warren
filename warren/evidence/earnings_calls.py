@@ -18,7 +18,7 @@ class AlphaVantageEarningsCallProvider:
 
     ENDPOINT = "https://www.alphavantage.co/query"
     SOURCE_URL = "https://www.alphavantage.co/documentation/#earnings-call-transcript"
-    cache_namespace = "alpha-vantage-earnings-calls-v2"
+    cache_namespace = "alpha-vantage-earnings-calls-v3"
     MATERIAL_TERMS = (
         "guidance", "demand", "traffic", "volume", "pricing", "price", "margin",
         "cost", "investment", "return", "growth", "revenue", "earnings", "cash flow",
