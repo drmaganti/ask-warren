@@ -59,7 +59,7 @@ def test_analyze_page_is_served():
     assert "What caused it" in response.text
     assert "What to watch" in response.text
     assert "Next decision point" in response.text
-    assert "View detailed analysis" in response.text
+    assert "Click a bullet to see the reasoning and sources." in response.text
     assert "firstSentences" in response.text
     assert "What Matters Next" in response.text
     assert "Evidence confidence" in response.text
