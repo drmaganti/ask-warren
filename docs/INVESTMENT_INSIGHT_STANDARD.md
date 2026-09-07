@@ -180,6 +180,8 @@ Material unresolved events belong in Bear or Risks with explicit uncertainty and
 
 Operating margin increased from 9.5% to 12.9% while quarterly revenue declined 1.4% from the prior year. The statements show that operating income contributed materially to the earnings increase, with additional help from items below operating income. Until the filing identifies those components, the analysis should not assume the entire increase represents recurring efficiency.
 
+Do not expose raw reconciliation diagnostics such as an “unreconciled difference” or an unnamed “below operating income” contribution as an investor-facing bullet. Translate the bridge into a clear conclusion—core operations were the larger driver, non-operating items were the larger driver, or the cause is unresolved—and name a transaction, tax item, or adjustment only when primary evidence supports that attribution.
+
 **Investor implication:** If customer traffic begins growing while the higher margin holds, earnings could rise faster than current revenue expectations. If traffic remains weak, cost improvements have a practical ceiling.
 
 **What to watch:** Comparable-store transactions, customer traffic, regional sales, operating margin, and whether analysts raise revenue estimates as well as EPS estimates.

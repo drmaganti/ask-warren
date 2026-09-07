@@ -65,6 +65,7 @@ def test_analyze_page_is_served():
     assert "Evidence confidence" in response.text
     assert "Analysis updated" in response.text
     assert "Watchlist" not in response.text
+    assert "unreconciled difference" not in response.text.lower()
     assert "0.69936" not in response.text
 
 

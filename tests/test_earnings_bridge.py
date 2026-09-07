@@ -1,7 +1,8 @@
 from datetime import date
 
+from warren.deep import DeterministicDeepAnalysisProvider
 from warren.deep.drivers import earnings_bridge
-from warren.models import MetricComparison, MetricSnapshot
+from warren.models import EvidenceBundle, MetricComparison, MetricSnapshot
 
 
 def snapshot():
@@ -31,3 +32,18 @@ def test_bridge_refuses_missing_or_mismatched_comparisons():
     assert earnings_bridge(data)["status"] == "unavailable"
     data.quarterly_comparisons.pop()
     assert earnings_bridge(data)["status"] == "unavailable"
+
+
+def test_investor_copy_interprets_bridge_without_exposing_raw_diagnostics():
+    data = snapshot()
+    data.revenue_growth = -0.01
+    data.earnings_growth = 0.20
+
+    _, bear = DeterministicDeepAnalysisProvider._structured_insights(
+        data, EvidenceBundle(), [], []
+    )
+
+    insight = next(item for item in bear if item.headline == "Profit growth is running ahead of sales growth")
+    assert "below operating income rather than in the core business" in insight.cause
+    assert "unreconciled difference" not in insight.cause.lower()
+    assert "$" not in insight.cause

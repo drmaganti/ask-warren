@@ -416,13 +416,21 @@ class DeterministicDeepAnalysisProvider:
 
         bridge = earnings_bridge(metrics)
         if metrics.revenue_growth is not None and metrics.revenue_growth < 0 and metrics.earnings_growth is not None and metrics.earnings_growth > 0:
-            cause = (
-                f"The statements show operating income changed by {cls._money(bridge['operating_income_change'])}, "
-                f"items below operating income contributed {cls._money(bridge['below_operating_income_change'])}, and the tax-expense effect was {cls._money(bridge['tax_expense_effect'])}. "
-                "Primary-source attribution is still required before those contributions can be classified as recurring."
-                if bridge.get("status") == "available" else
-                "The available metrics show the divergence, but aligned statement data is missing, so the operating and non-operating causes cannot yet be separated."
-            )
+            if bridge.get("status") == "available":
+                operating = bridge["operating_income_change"]
+                non_operating = bridge["below_operating_income_change"]
+                if abs(non_operating) > abs(operating):
+                    cause = (
+                        "Most of the year-over-year profit change occurred below operating income rather than in the core business. "
+                        "The available statement data does not identify the specific gain or adjustment, so that portion should not be treated as recurring until the filing explains it."
+                    )
+                else:
+                    cause = (
+                        "Most of the year-over-year profit improvement came from operating income, indicating that the core business contributed more than non-operating items. "
+                        "The next filing should confirm whether the improvement came from durable margins, pricing, volume or temporary cost reductions."
+                    )
+            else:
+                cause = "Aligned statement data is missing, so the analysis cannot yet separate operating improvement from taxes, gains or other non-operating effects."
             bear.append(InvestmentInsight(
                 headline="Profit growth is running ahead of sales growth",
                 finding=f"Revenue growth was {cls._pct(metrics.revenue_growth)} while earnings growth was {cls._pct(metrics.earnings_growth)}.",
@@ -540,19 +548,6 @@ class DeterministicDeepAnalysisProvider:
         if not evidence.news and len(risks) < 5:
             risks.append("No recent headline evidence is available in the current packet.")
         risks = risks[:5]
-        bridge = earnings_bridge(metrics)
-        if bridge["status"] == "available" and bridge["net_income_change"] > 0:
-            concerns.insert(0, (
-                f"What contributed to the earnings increase: operating income changed by {self._money(bridge['operating_income_change'])}; "
-                f"items below operating income contributed {self._money(bridge['below_operating_income_change'])}; "
-                f"the tax-expense effect was {self._money(bridge['tax_expense_effect'])}. "
-                f"The unreconciled difference is {self._money(bridge['unreconciled_change'])}. "
-                "These are provider-statement calculations. The filing reconciliation is required to identify transaction gains, "
-                "recurring effects and any attribution differences before treating the earnings increase as sustainable."
-            ))
-            bear_case.append(concerns[0])
-            bear_case = bear_case[:1] + [concerns[0]] + bear_case[1:3]
-
         citations: list[AnalysisCitation] = []
         if forward_support:
             citations.append(AnalysisCitation(section="bull_case", item_index=0, claim_ids=[forward_support[0][1]]))
