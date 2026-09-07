@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import time
 from datetime import UTC, datetime
 from typing import Any
 
@@ -18,7 +19,7 @@ class AlphaVantageEarningsCallProvider:
 
     ENDPOINT = "https://www.alphavantage.co/query"
     SOURCE_URL = "https://www.alphavantage.co/documentation/#earnings-call-transcript"
-    cache_namespace = "alpha-vantage-earnings-calls-v3"
+    cache_namespace = "alpha-vantage-earnings-calls-v4"
     MATERIAL_TERMS = (
         "guidance", "demand", "traffic", "volume", "pricing", "price", "margin",
         "cost", "investment", "return", "growth", "revenue", "earnings", "cash flow",
@@ -116,6 +117,10 @@ class AlphaVantageEarningsCallProvider:
         attempted = 0
         try:
             for quarter in self._quarters():
+                if attempted:
+                    # The free Alpha Vantage tier permits one request per
+                    # second. Pace fallback probes to avoid burst throttling.
+                    time.sleep(1.1)
                 attempted += 1
                 payload = self._request(symbol, quarter)
                 provider_message = next(
