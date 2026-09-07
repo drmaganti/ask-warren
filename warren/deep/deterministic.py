@@ -209,12 +209,13 @@ class DeterministicDeepAnalysisProvider:
             metrics.current_ratio,
         ]
         missing = sum(v is None for v in fields)
-        problematic_sources = sum(
+        unavailable_sources = sum(
             status.status in {"unavailable", "error"} for status in evidence.source_status
         )
-        if missing <= 2 and problematic_sources == 0:
+        partial_sources = sum(status.status == "partial" for status in evidence.source_status)
+        if missing <= 2 and unavailable_sources == 0 and partial_sources == 0:
             return "high"
-        if missing <= 5 and problematic_sources <= 2:
+        if missing <= 5 and unavailable_sources <= 2:
             return "medium"
         return "low"
 
@@ -580,10 +581,21 @@ class DeterministicDeepAnalysisProvider:
                 "New filings, earnings or estimate evidence that resolves the dominant downside risks.",
             ]
         else:
+            tension: list[str] = []
+            margin_comparison = next(
+                (item for item in metrics.quarterly_comparisons if item.metric == "quarterly_operating_margin"),
+                None,
+            )
+            if metrics.revenue_growth is not None and metrics.revenue_growth < 0 and metrics.earnings_growth is not None and metrics.earnings_growth > 0:
+                tension.append("earnings are improving while revenue remains under pressure")
+            if metrics.forward_pe is not None and metrics.forward_pe >= 30:
+                tension.append(f"the {metrics.forward_pe:.1f}x forward earnings multiple requires meaningful execution")
+            if margin_comparison and (margin_comparison.year_ago is not None and margin_comparison.current > margin_comparison.year_ago):
+                tension.append("operating margins have improved but their durability still needs confirmation")
+            central_tension = "; ".join(tension[:2]) or "the operating evidence and valuation do not yet point in the same direction"
             thesis = (
-                f"{metrics.company_name or metrics.ticker} currently belongs on Watch because the evidence does not yet "
-                "support an Attractive or Avoid conclusion. "
-                "The setup has meaningful strengths and unresolved trade-offs."
+                f"{metrics.company_name or metrics.ticker} is a Watch because {central_tension}. "
+                "The next decision turns on whether demand begins supporting the earnings recovery without requiring more valuation expansion."
             )
             changes = [
                 "A more attractive valuation or stronger free-cash-flow yield without deterioration in quality.",

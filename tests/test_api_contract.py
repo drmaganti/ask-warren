@@ -61,6 +61,11 @@ def test_analyze_page_is_served():
     assert "Next decision point" in response.text
     assert "View detailed analysis" in response.text
     assert "firstSentences" in response.text
+    assert "What Matters Next" in response.text
+    assert "Evidence confidence" in response.text
+    assert "Analysis updated" in response.text
+    assert "Watchlist" not in response.text
+    assert "0.69936" not in response.text
 
 
 def test_methodology_page_is_served():

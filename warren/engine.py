@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 
-from .models import DeepAnalysis, DeepResponse, EvidenceBundle, MetricSnapshot, ScreenRequest, ScreenResponse, ScreenResult, SourceStatus
+from .models import DeepAnalysis, DeepResponse, DcfResult, EvidenceBundle, MetricSnapshot, ScreenRequest, ScreenResponse, ScreenResult, SourceStatus
 from .dcf import calculate_dcf
 from .protocols import DeepAnalysisProvider, EvidenceProvider, MarketDataProvider
 from .scoring import score_metrics
@@ -53,6 +53,31 @@ def validate_analysis_citations(analysis: DeepAnalysis, evidence: EvidenceBundle
         "bull_insights": clean_insights(analysis.bull_insights),
         "bear_insights": clean_insights(analysis.bear_insights),
     })
+
+
+def reconcile_analysis_with_dcf(analysis: DeepAnalysis, dcf: DcfResult) -> DeepAnalysis:
+    """Explain material tension between the narrative verdict and deterministic valuation."""
+    if dcf.status != "available":
+        return analysis
+    base = next((item for item in dcf.scenarios if item.name == "base"), None)
+    bull = next((item for item in dcf.scenarios if item.name == "bull"), None)
+    if not base or base.upside_downside is None or base.upside_downside > -0.30:
+        return analysis
+    gap = abs(base.upside_downside) * 100
+    if analysis.verdict == "watch":
+        explanation = (
+            f" The base DCF is {gap:.0f}% below the current price, making valuation the main constraint. "
+            "The view remains Watch rather than Avoid because DCF is highly assumption-sensitive and the operating evidence is mixed."
+        )
+    elif analysis.verdict == "attractive" and bull and bull.upside_downside is not None and bull.upside_downside < -0.20:
+        explanation = (
+            f" The base DCF is {gap:.0f}% below the current price and even the Bull scenario remains below it; "
+            "that valuation conflict caps the current view at Watch."
+        )
+        return analysis.model_copy(update={"thesis": analysis.thesis + explanation, "verdict": "watch"})
+    else:
+        explanation = f" The base DCF is {gap:.0f}% below the current price, reinforcing valuation risk while remaining sensitive to its assumptions."
+    return analysis.model_copy(update={"thesis": analysis.thesis + explanation})
 
 
 class Warren:
@@ -137,6 +162,7 @@ class Warren:
 
         analysis, model = await self.deep_analysis.analyze(metrics, scores, evidence)
         analysis = validate_analysis_citations(analysis, evidence)
+        analysis = reconcile_analysis_with_dcf(analysis, dcf)
         return DeepResponse(
             ticker=metrics.ticker,
             metrics=metrics,

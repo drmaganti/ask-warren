@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from warren.engine import Warren
+from warren.dcf import calculate_dcf
+from warren.engine import Warren, reconcile_analysis_with_dcf
 from warren.models import (
     AnalysisCitation,
     CategoryScores,
@@ -202,3 +203,22 @@ async def test_min_score_filters_results():
     filtered = await warren.screen(["GOOD", "WEAK"], min_score=threshold)
 
     assert [item.ticker for item in filtered.results] == ["GOOD"]
+
+
+def test_extreme_dcf_conflict_is_explained_and_caps_attractive_view():
+    analysis = DeepAnalysis(
+        thesis="The operating case is improving.",
+        positives=["positive"], concerns=["concern"], bull_case=["bull"], bear_case=["bear"],
+        risks=["risk"], what_would_change_view=["change"], verdict="attractive", confidence="high",
+    )
+    dcf = calculate_dcf(MetricSnapshot(
+        ticker="TEST", price=300, market_cap=3_000_000_000, total_revenue=1_000_000_000,
+        free_cash_flow=100_000_000, operating_cash_flow=120_000_000, total_cash=0, total_debt=0,
+        shares_outstanding=10_000_000, historical_free_cash_flow=[80_000_000, 90_000_000, 100_000_000],
+        revenue_growth=.02, earnings_growth=.03, operating_margin=.10, beta=1,
+    ))
+
+    reconciled = reconcile_analysis_with_dcf(analysis, dcf)
+
+    assert reconciled.verdict == "watch"
+    assert "valuation conflict" in reconciled.thesis
