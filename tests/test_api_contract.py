@@ -45,20 +45,20 @@ def test_analyze_page_is_served():
     assert "U.S. equities V1" in response.text
     assert "Investment View" in response.text
     assert "Bull &amp; Bear" in response.text
-    assert "Sources and data quality" in response.text
-    assert "Filing insights and recent research" in response.text
-    assert "Supporting evidence" in response.text
-    assert "Technical snapshot" in response.text
-    assert "Insider activity" in response.text
+    assert "Source availability and analysis coverage" in response.text
+    assert "Filing insights and research excerpts" in response.text
+    assert "Evidence behind the view" in response.text
+    assert "Market momentum" in response.text
+    assert "Insider transactions" in response.text
     assert "Methodology" in response.text
     assert 'aria-live="polite"' in response.text
-    assert "Missing information" in response.text
+    assert "Information gaps" in response.text
     assert "history.replaceState" in response.text
-    assert "Sensitivity" in response.text
+    assert "Assumptions and sensitivity" in response.text
     assert "What caused it" in response.text
     assert "What to watch" in response.text
     assert "Next decision point" in response.text
-    assert "Open a reason to see what supports it" in response.text
+    assert "Open any point for its cause" in response.text
     assert "Strongest reasons to own" in response.text
     assert "Strongest reasons to sell or wait" in response.text
     assert "6 strongest reasons" not in response.text
