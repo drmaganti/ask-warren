@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ask Warren | Investment Research Analyst</title>
+<meta name="description" content="Research U.S. stocks with Warren, your evidence-backed investment research analyst. Compare the case for and against, analyst expectations, financials, risks, and sources.">
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#07100d;--bg2:#0a1511;--surface:#0d1814;--surface2:#111e19;--surface3:#15251e;
+  --line:#21372d;--line2:#2b4a3a;--text:#f6f8f7;--muted:#9cafA5;
+  --green:#71e5a5;--green2:#36c97c;--amber:#f4c65d;--red:#f27478;--blue:#84b7ff;
+  --radius:14px;--shadow:0 18px 60px rgba(0,0,0,.28);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+a{color:inherit;text-decoration:none}
+button,input{font:inherit}
+button{cursor:pointer}
+button:disabled{cursor:not-allowed;opacity:.55}
+:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+.muted{color:var(--muted)}
+.eyebrow{color:var(--green);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.11em}
+.brand{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:800;white-space:nowrap}
+.brandMark{width:30px;height:30px;display:grid;place-items:center;color:var(--green);font-weight:900}
+.brandMark svg{width:28px;height:28px}
+.siteHeader{height:72px;position:sticky;top:0;z-index:50;background:rgba(7,16,13,.88);backdrop-filter:blur(18px);border-bottom:1px solid rgba(33,55,45,.78)}
+.siteHeaderInner{height:100%;max-width:1240px;margin:auto;padding:0 28px;display:flex;align-items:center;gap:30px}
+.siteNav{display:flex;gap:8px;margin-left:18px}
+.siteNav a{padding:10px 12px;border-radius:9px;color:#c3d0ca}
+.siteNav a:hover{background:var(--surface2);color:white}
+.headerActions{margin-left:auto;display:flex;align-items:center;gap:10px}
+.btn{min-height:42px;border-radius:10px;border:1px solid var(--line2);padding:0 16px;background:transparent;color:var(--text);font-weight:750}
+.btn.primary{background:var(--green);color:#04100a;border-color:var(--green)}
+.btn.ghost:hover{background:var(--surface2)}
+.landing{min-height:calc(100vh - 72px);position:relative;overflow:hidden}
+.landingInner{max-width:1240px;margin:auto;padding:82px 28px 50px}
+.heroGrid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(380px,.95fr);align-items:center;gap:60px;min-height:500px}
+.heroCopy h1{font-size:clamp(48px,6vw,76px);line-height:1.02;letter-spacing:-.055em;margin:16px 0 18px;max-width:760px}
+.heroCopy h1 span{color:var(--green)}
+.heroCopy .lede{font-size:20px;color:#d2dcd7;margin:0 0 6px}
+.heroCopy .sublede{font-size:16px;color:var(--muted);margin:0 0 30px}
+.searchBox{display:flex;max-width:680px;height:58px;background:#0b1713;border:1px solid #355647;border-radius:12px;overflow:hidden;box-shadow:0 0 0 1px rgba(113,229,165,.02)}
+.searchBox:focus-within{border-color:var(--green);box-shadow:0 0 0 3px rgba(113,229,165,.13)}
+.searchBox input{flex:1;min-width:0;border:0;background:transparent;color:white;padding:0 18px;outline:0;font-size:16px}
+.searchBox button{width:56px;border:0;background:var(--green);color:#06110b;font-size:22px;font-weight:900}
+.examples{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px;color:var(--muted);font-size:12px}
+.chip{border:1px solid var(--line2);background:transparent;color:#d2ded8;border-radius:999px;padding:6px 11px;font-weight:700}
+.chip:hover{border-color:#467861;color:white}
+.heroArt{height:470px;position:relative;display:grid;place-items:center}
+.orb{width:min(440px,42vw);aspect-ratio:1;border-radius:50%;position:relative;filter:drop-shadow(0 20px 70px rgba(31,159,96,.12));opacity:.95}
+.orb:before,.orb:after{content:"";position:absolute;inset:0;border-radius:50%}
+.orb:before{
+ background:
+ radial-gradient(circle at 50% 50%,transparent 0 31%,rgba(113,229,165,.07) 31.4% 31.8%,transparent 32.2% 100%),
+ radial-gradient(circle,rgba(113,229,165,.7) 0 1.2px,transparent 1.4px);
+ background-size:100% 100%,16px 16px;
+ mask-image:radial-gradient(circle at 43% 47%,#000 0 45%,transparent 72%);
+}
+.orb:after{background:radial-gradient(circle at 48% 46%,rgba(79,214,142,.12),transparent 57%)}
+.orbLine{position:absolute;left:4%;right:4%;top:50%;height:1px;background:linear-gradient(90deg,transparent,rgba(113,229,165,.35),transparent);transform:rotate(-14deg)}
+.heroQuote{position:absolute;right:4%;bottom:36px;color:#cbd8d2;font-size:12px;max-width:180px}
+.features{display:grid;grid-template-columns:repeat(4,1fr);gap:26px;margin-top:40px;padding-top:28px;border-top:1px solid var(--line)}
+.featureIcon{width:32px;height:32px;border:1px solid #315944;border-radius:8px;display:grid;place-items:center;color:var(--green);margin-bottom:12px}
+.feature strong{display:block;margin-bottom:4px}
+.feature small{color:var(--muted)}
+.status{display:none;max-width:1240px;margin:0 auto 18px;padding:12px 15px;border:1px solid var(--line);border-radius:10px;background:#0d1a15;color:#cad7d1}
+.status.error{display:block;border-color:#753b3d;color:#ffd4d6}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid #496357;border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite;margin-right:8px;vertical-align:-2px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Analysis app */
+.appShell{display:none;min-height:calc(100vh - 72px);grid-template-columns:220px minmax(0,1fr)}
+body.has-results .landing{display:none}
+body.has-results .appShell{display:grid}
+body.has-results .siteHeader{display:none}
+.sideNav{position:sticky;top:0;height:100vh;border-right:1px solid var(--line);background:#08110e;padding:22px 14px;display:flex;flex-direction:column}
+.sideNav .brand{padding:0 10px;margin-bottom:24px}
+.sideSearchLink,.sideLink{display:flex;align-items:center;gap:10px;min-height:43px;padding:9px 11px;border-radius:9px;color:#bdcbc4;border:0;background:transparent;width:100%;text-align:left}
+.sideSearchLink{background:#11231b;color:white}
+.sideLink:hover{background:#0e1d17;color:white}
+.sideIcon{width:18px;text-align:center;color:#92a89d}
+.sideGroup{margin-top:18px;border-top:1px solid var(--line);padding-top:14px}
+.sideLabel{padding:0 11px 7px;color:#71867b;text-transform:uppercase;letter-spacing:.09em;font-size:10px;font-weight:800}
+.recentList{display:grid;gap:2px}
+.recentTicker{padding:7px 11px;border-radius:8px;color:#9fb2a8;font-size:12px}
+.recentTicker.active{background:#101e19;color:#fff}
+.sideBottom{margin-top:auto}
+.mobileAppHeader{display:none}
+.appMain{min-width:0}
+.appTop{height:70px;display:flex;align-items:center;padding:0 28px;border-bottom:1px solid var(--line);background:rgba(7,16,13,.92);position:sticky;top:0;z-index:30;backdrop-filter:blur(14px)}
+.appSearch{display:flex;height:42px;width:min(560px,55vw);border:1px solid var(--line2);border-radius:10px;overflow:hidden;background:#0b1713}
+.appSearch input{flex:1;min-width:0;border:0;background:transparent;color:white;padding:0 14px;outline:0}
+.appSearch button{border:0;background:var(--surface3);color:var(--green);padding:0 14px;font-weight:850}
+.appContent{max-width:1180px;margin:auto;padding:24px 28px 56px}
+.companyHeader{display:flex;align-items:center;gap:14px}
+.companyMark{width:48px;height:48px;border-radius:12px;background:#12271e;border:1px solid #2a503e;display:grid;place-items:center;color:var(--green);font-weight:900}
+.companyTitle h1{font-size:24px;margin:0 0 2px;letter-spacing:-.02em}
+.companyMeta{color:var(--muted);font-size:12px}
+.companyPrice{margin-left:auto;text-align:right}
+.companyPrice strong{display:block;font-size:22px}
+.companyPrice small{color:var(--green)}
+.companyActions{display:flex;gap:8px;margin-left:20px}
+.tabBar{display:flex;gap:30px;border-bottom:1px solid var(--line);overflow-x:auto;margin:20px 0 20px}
+.tab{appearance:none;background:transparent;border:0;border-bottom:2px solid transparent;color:#91a69b;min-height:46px;padding:0 0 10px;font-weight:700;white-space:nowrap}
+.tab[aria-selected="true"]{color:white;border-bottom-color:var(--green)}
+.panel[hidden]{display:none}
+.grid12{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:12px}
+.card{background:linear-gradient(180deg,#0f1b17,#0b1512);border:1px solid var(--line);border-radius:var(--radius);padding:18px;min-width:0}
+.card h2,.card h3{margin:0}
+.card h3{font-size:14px}
+.cardLead{margin:4px 0 14px;color:var(--muted);font-size:12px}
+.viewCard{grid-column:span 4}
+.targetsCard{grid-column:span 8}
+.thesisCard{grid-column:span 7}
+.takeawaysCard{grid-column:span 5}
+.reasonsCard{grid-column:span 6}
+.watchCard{grid-column:span 12}
+.viewRow{display:flex;align-items:center;justify-content:space-between;gap:20px;margin:18px 0 10px}
+.verdict{display:inline-flex;border-radius:8px;padding:9px 13px;font-weight:950;text-transform:uppercase;letter-spacing:.04em;font-size:20px}
+.verdict.attractive{background:var(--green);color:#06110b}
+.verdict.watch{background:var(--amber);color:#1e1604}
+.verdict.avoid{background:var(--red);color:#210607}
+.confidenceRing{--p:72;width:68px;height:68px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--green) calc(var(--p)*1%),#25372f 0);position:relative}
+.confidenceRing:after{content:"";position:absolute;inset:6px;border-radius:50%;background:#0d1814}
+.confidenceRing span{position:relative;z-index:1;font-weight:900}
+.viewSummary{color:#d3ddd8;margin:0}
+.targetTop{display:flex;justify-content:space-between;gap:18px;margin:16px 0}
+.targetStat strong{display:block;font-size:20px}
+.targetStat small{color:var(--muted)}
+.rangeTrack{position:relative;height:62px;margin:14px 4px 0}
+.rangeLine{position:absolute;left:0;right:0;top:22px;height:2px;background:#65786f}
+.rangeLine:before,.rangeLine:after{content:"";position:absolute;top:-4px;width:1px;height:10px;background:#788c82}
+.rangeLine:before{left:0}.rangeLine:after{right:0}
+.rangePoint{position:absolute;top:15px;width:14px;height:14px;border-radius:50%;background:var(--green);border:3px solid #102019;transform:translateX(-50%);box-shadow:0 0 0 1px rgba(113,229,165,.4)}
+.rangePoint.current{top:31px;background:white;width:9px;height:9px}
+.rangeLabel{position:absolute;top:42px;transform:translateX(-50%);font-size:10px;color:var(--muted);white-space:nowrap}
+.targetContext{display:flex;gap:24px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.targetContext strong{display:block;font-size:17px}
+.pos{color:var(--green)}.neg{color:var(--red)}.neutral{color:var(--amber)}
+.sourceLink{font-size:11px;color:#9fcab3}
+.thesisText{font-size:15px;color:#d5dfda;margin:12px 0 0}
+.takeawayList,.reasonList,.watchList{display:grid}
+.takeaway,.reason,.watchItem{display:grid;grid-template-columns:24px 1fr;gap:9px;padding:10px 0;border-top:1px solid var(--line)}
+.takeaway:first-child,.reason:first-child,.watchItem:first-child{border-top:0}
+.indexBadge{width:22px;height:22px;border-radius:50%;background:#183326;color:var(--green);display:grid;place-items:center;font-size:11px;font-weight:900}
+.reason.sell .indexBadge{background:#351819;color:var(--red)}
+.takeaway b,.reason b,.watchItem b{display:block;font-size:13px}
+.takeaway small,.reason small,.watchItem small{color:var(--muted)}
+.caseGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.caseColumn{display:grid;gap:10px}
+.caseHeader{padding:2px 3px 4px}
+.caseHeader h2{font-size:16px}
+.caseHeader.bull h2{color:var(--green)}.caseHeader.bear h2{color:var(--red)}
+.insight{border:1px solid var(--line);border-radius:11px;background:#0d1814;overflow:hidden}
+.insight summary{list-style:none;min-height:60px;display:grid;grid-template-columns:26px 1fr auto;align-items:center;gap:10px;padding:12px 14px;cursor:pointer}
+.insight summary::-webkit-details-marker{display:none}
+.insightNumber{width:24px;height:24px;border:1px solid #27513d;border-radius:6px;display:grid;place-items:center;color:var(--green);font-size:11px;font-weight:900}
+.bearInsight .insightNumber{border-color:#613233;color:var(--red)}
+.insight summary b{font-size:13px}
+.insight summary small{display:block;color:var(--muted);margin-top:2px}
+.insightBody{border-top:1px solid var(--line);padding:13px 14px 15px}
+.insightBody p{margin:7px 0;color:#c6d2cc}
+.insightLabel{font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:#73887d;margin-top:12px}
+.metaPills{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.metaPill{font-size:10px;border:1px solid #2f4c3f;border-radius:999px;padding:3px 7px;color:#aebfb6}
+.sourcePills{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.sourcePill{font-size:10px;border:1px solid #315d47;border-radius:999px;padding:4px 7px;color:var(--green)}
+.expectHeader{margin-bottom:12px}
+.expectHeader h2{font-size:16px}
+.expectGrid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(240px,.5fr);gap:12px}
+.expectTargets{grid-column:1/-1}
+.revisionList{display:grid;gap:8px}
+.revisionRow{display:grid;grid-template-columns:1fr auto;gap:10px;padding:11px 0;border-top:1px solid var(--line)}
+.revisionRow:first-child{border-top:0}
+.revisionRow strong{font-size:13px}
+.revisionRow small{display:block;color:var(--muted)}
+.revisionDelta{font-weight:850}
+.historyList{display:grid;gap:8px}
+.historyRow{padding:10px 0;border-top:1px solid var(--line)}
+.historyRow:first-child{border-top:0}
+.historyRow b{display:block}
+.historyRow small{color:var(--muted)}
+.miniBars{display:flex;align-items:end;gap:10px;height:130px;padding:10px 0 2px;border-bottom:1px solid var(--line)}
+.miniBarWrap{flex:1;display:grid;grid-template-rows:1fr auto;gap:6px;height:100%;min-width:0}
+.miniBar{align-self:end;width:100%;border-radius:6px 6px 2px 2px;background:linear-gradient(180deg,var(--green),#2b8f5c);min-height:8px}
+.miniBarLabel{text-align:center;font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.finGrid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:12px}
+.metricCard{grid-column:span 4}
+.metricRows{display:grid}
+.metricRow{display:flex;justify-content:space-between;gap:16px;padding:9px 0;border-top:1px solid var(--line)}
+.metricRow:first-child{border-top:0}
+.metricRow span{color:var(--muted)}
+.metricRow strong{text-align:right}
+.fullCard{grid-column:span 12}
+.halfCard{grid-column:span 6}
+.evidenceGrid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(300px,.8fr);gap:12px}
+.sourceRow{padding:12px 0;border-top:1px solid var(--line)}
+.sourceRow:first-child{border-top:0}
+.sourceRow strong{display:block}
+.sourceRow small{display:block;color:var(--muted);margin-top:3px}
+.sourceRow p{color:#c3d0ca;margin:8px 0 0}
+.qualityRows{display:grid;gap:11px}
+.qualityRow{display:grid;grid-template-columns:1fr auto;gap:7px;font-size:12px}
+.qualityRow span{color:var(--muted)}
+.qualityBar{grid-column:1/-1;height:5px;border-radius:10px;background:#22342c;overflow:hidden}
+.qualityBar i{display:block;height:100%;background:var(--green)}
+details.disclosure{border-top:1px solid var(--line);margin-top:10px;padding-top:6px}
+details.disclosure summary{cursor:pointer;color:#b9c9c1;padding:9px 0;font-weight:750}
+.footer{margin-top:26px;padding-top:18px;border-top:1px solid var(--line);color:#7f9388;font-size:11px}
+.toast{position:fixed;right:22px;bottom:22px;background:#13251d;border:1px solid #315642;color:#e6eee9;border-radius:10px;padding:11px 14px;box-shadow:var(--shadow);display:none;z-index:100}
+
+@media(max-width:980px){
+  .heroGrid{grid-template-columns:1fr}.heroArt{display:none}.features{grid-template-columns:repeat(2,1fr)}
+  .siteNav{display:none}.appShell{grid-template-columns:1fr}.sideNav{display:none}.mobileAppHeader{display:flex}
+  .appTop{top:58px}.viewCard,.targetsCard,.thesisCard,.takeawaysCard,.reasonsCard,.watchCard{grid-column:span 12}
+  .caseGrid,.expectGrid,.evidenceGrid{grid-template-columns:1fr}.metricCard,.halfCard{grid-column:span 6}
+}
+@media(max-width:640px){
+  .siteHeaderInner{padding:0 16px}.headerActions .ghost{display:none}.landingInner{padding:48px 16px 34px}
+  .heroCopy h1{font-size:46px}.heroCopy .lede{font-size:18px}.features{grid-template-columns:1fr 1fr;gap:20px 14px}
+  .mobileAppHeader{position:sticky;top:0;z-index:40;height:58px;border-bottom:1px solid var(--line);background:#08110e;padding:0 14px;align-items:center;justify-content:space-between}
+  .mobileAppHeader .brand{font-size:16px}.appTop{height:60px;padding:8px 14px}.appSearch{width:100%}
+  .appContent{padding:18px 14px 40px}.companyHeader{align-items:flex-start;flex-wrap:wrap}.companyPrice{margin-left:auto}
+  .companyActions{width:100%;margin-left:62px}.companyActions .btn{min-height:36px;padding:0 11px}
+  .tabBar{gap:22px;margin-top:14px}.card{padding:15px}.viewRow{align-items:flex-start}.targetTop{gap:8px}.targetStat strong{font-size:17px}
+  .caseGrid{gap:14px}.metricCard,.halfCard,.fullCard{grid-column:span 12}.grid12{gap:10px}
+}
+</style>
+</head>
+<body>
+<header class="siteHeader">
+  <div class="siteHeaderInner">
+    <a class="brand" href="/" aria-label="Ask Warren home">
+      <span class="brandMark" aria-hidden="true">
+        <svg viewBox="0 0 32 32" fill="none"><path d="M5 24 11 10l5 9 4-13 7 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="m22 8 5-2-1 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>Ask Warren
+    </a>
+    <nav class="siteNav" aria-label="Primary">
+      <a href="#product">Product</a>
+      <a href="#examples">Examples</a>
+      <a href="/methodology">Methodology</a>
+      <a href="/roadmap">Roadmap</a>
+    </nav>
+    <div class="headerActions"><button class="btn primary" type="button" data-focus-search>Get started</button></div>
+  </div>
+</header>
+
+<section class="landing" id="product">
+  <div class="landingInner">
+    <div class="heroGrid">
+      <div class="heroCopy">
+        <div class="eyebrow">Your investment research analyst</div>
+        <h1>Research any company with <span>Warren.</span></h1>
+        <p class="lede">Your investment research analyst.</p>
+        <p class="sublede">Evidence-backed analysis. Clear reasoning. No hype.</p>
+        <form class="searchBox" id="landingForm">
+          <input id="landingTicker" autocomplete="off" maxlength="12" placeholder="Enter a company name or ticker…" aria-label="Stock ticker">
+          <button type="submit" aria-label="Analyze">→</button>
+        </form>
+        <div class="examples" id="examples"><span>Try an example:</span>
+          <button class="chip" type="button" data-t="AAPL">AAPL</button>
+          <button class="chip" type="button" data-t="MSFT">MSFT</button>
+          <button class="chip" type="button" data-t="NVDA">NVDA</button>
+          <button class="chip" type="button" data-t="AMZN">AMZN</button>
+          <button class="chip" type="button" data-t="GOOGL">GOOGL</button>
+        </div>
+      </div>
+      <div class="heroArt" aria-hidden="true"><div class="orb"><span class="orbLine"></span></div><div class="heroQuote">Better research.<br>Brighter decisions.</div></div>
+    </div>
+    <div class="features">
+      <div class="feature"><div class="featureIcon">▣</div><strong>Evidence first</strong><small>Grounded in real sources</small></div>
+      <div class="feature"><div class="featureIcon">⇄</div><strong>Multiple perspectives</strong><small>The case for and against</small></div>
+      <div class="feature"><div class="featureIcon">⌁</div><strong>Key risks &amp; catalysts</strong><small>What could change the view</small></div>
+      <div class="feature"><div class="featureIcon">↗</div><strong>Clear, actionable insights</strong><small>So you can decide faster</small></div>
+    </div>
+  </div>
+</section>
+
+<div class="status" id="status" role="status" aria-live="polite"></div>
+
+<div class="appShell">
+  <aside class="sideNav">
+    <a class="brand" href="/"><span class="brandMark" aria-hidden="true">⌁</span>Ask Warren</a>
+    <button class="sideSearchLink" id="newAnalysis"><span class="sideIcon">＋</span>New Analysis</button>
+    <a class="sideLink" href="/methodology"><span class="sideIcon">◇</span>Methodology</a>
+    <a class="sideLink" href="/roadmap"><span class="sideIcon">↗</span>Roadmap</a>
+    <div class="sideGroup"><div class="sideLabel">Recent</div><div class="recentList" id="recentList"></div></div>
+    <div class="sideBottom"><button class="sideLink" id="shareSide"><span class="sideIcon">⌁</span>Share analysis</button></div>
+  </aside>
+  <main class="appMain">
+    <div class="mobileAppHeader"><a class="brand" href="/"><span class="brandMark">⌁</span>Ask Warren</a><a class="muted" href="/methodology">Methodology</a></div>
+    <div class="appTop">
+      <form class="appSearch" id="appForm"><input id="appTicker" autocomplete="off" maxlength="12" placeholder="Search for a company or ticker…" aria-label="Stock ticker"><button type="submit">Analyze</button></form>
+    </div>
+    <div class="appContent">
+      <header class="companyHeader">
+        <div class="companyMark" id="companyTicker">—</div>
+        <div class="companyTitle"><h1 id="companyName">Company</h1><div class="companyMeta" id="companyMeta"></div></div>
+        <div class="companyPrice"><strong id="price">—</strong><small id="priceContext">Current price</small></div>
+        <div class="companyActions"><button class="btn ghost" id="shareButton" type="button">Share</button></div>
+      </header>
+
+      <div class="tabBar" role="tablist" aria-label="Analysis sections">
+        <button class="tab" id="tab-overview" data-panel="overview" role="tab" aria-selected="true">Investment View</button>
+        <button class="tab" id="tab-cases" data-panel="cases" role="tab" aria-selected="false">Bull &amp; Bear</button>
+        <button class="tab" id="tab-expectations" data-panel="expectations" role="tab" aria-selected="false">Expectations</button>
+        <button class="tab" id="tab-financials" data-panel="financials" role="tab" aria-selected="false">Financials</button>
+        <button class="tab" id="tab-evidence" data-panel="evidence" role="tab" aria-selected="false">Evidence</button>
+      </div>
+
+      <section class="panel" id="view-overview" role="tabpanel">
+        <div class="grid12">
+          <article class="card viewCard">
+            <h3>Warren's View</h3>
+            <div class="viewRow"><span class="verdict watch" id="verdict">WATCH</span><div class="confidenceRing" id="confidenceRing"><span id="confidence">—</span></div></div>
+            <p class="viewSummary" id="viewSummary"></p>
+          </article>
+          <article class="card targetsCard">
+            <div style="display:flex;justify-content:space-between;gap:12px"><h3>Analyst Price Targets</h3><a class="sourceLink" id="analystSource" target="_blank" rel="noopener">From Yahoo Finance ↗</a></div>
+            <div id="targetsOverview"></div>
+          </article>
+          <article class="card thesisCard"><h3>Investment Thesis</h3><p class="thesisText" id="thesis"></p></article>
+          <article class="card takeawaysCard"><h3>Key Takeaways</h3><div class="takeawayList" id="takeaways"></div></article>
+          <article class="card reasonsCard"><h3>Strongest Reasons to Own</h3><div class="reasonList" id="ownReasons"></div></article>
+          <article class="card reasonsCard"><h3 style="color:var(--red)">Strongest Reasons to Sell or Wait</h3><div class="reasonList" id="sellReasons"></div></article>
+          <article class="card watchCard"><h3>What Could Change Warren's View</h3><div class="watchList" id="watchSignals"></div></article>
+        </div>
+      </section>
+
+      <section class="panel" id="view-cases" role="tabpanel" hidden>
+        <div class="caseGrid">
+          <div class="caseColumn"><div class="caseHeader bull"><h2>The Bull Case</h2><div class="muted">The strongest supported reasons the investment could work.</div></div><div id="bullCases"></div></div>
+          <div class="caseColumn"><div class="caseHeader bear"><h2>The Bear Case</h2><div class="muted">The strongest supported reasons the investment could disappoint.</div></div><div id="bearCases"></div></div>
+        </div>
+      </section>
+
+      <section class="panel" id="view-expectations" role="tabpanel" hidden>
+        <div class="expectHeader"><h2>Expectations</h2><div class="muted">Analyst targets, earnings estimates, revisions, and recent surprises.</div></div>
+        <div class="expectGrid">
+          <article class="card expectTargets"><div style="display:flex;justify-content:space-between"><h3>Analyst Price Targets</h3><a class="sourceLink" id="analystSource2" target="_blank" rel="noopener">From Yahoo Finance ↗</a></div><div id="targetsDetail"></div></article>
+          <article class="card"><h3>Estimate Revisions</h3><p class="cardLead">How current EPS estimates compare with 30 days ago.</p><div class="revisionList" id="revisions"></div></article>
+          <article class="card"><h3>Recent Earnings</h3><p class="cardLead">Actual EPS versus the consensus estimate.</p><div class="historyList" id="earningsHistory"></div></article>
+          <article class="card"><h3>Revision Direction</h3><p class="cardLead">A visual snapshot of current estimate change by horizon.</p><div class="miniBars" id="revisionBars"></div></article>
+          <article class="card"><h3>Warren's Read</h3><p class="thesisText" id="expectationRead"></p></article>
+        </div>
+      </section>
+
+      <section class="panel" id="view-financials" role="tabpanel" hidden>
+        <div class="finGrid">
+          <article class="card metricCard"><h3>Business &amp; Growth</h3><div class="metricRows" id="businessMetrics"></div></article>
+          <article class="card metricCard"><h3>Profitability &amp; Cash Flow</h3><div class="metricRows" id="cashMetrics"></div></article>
+          <article class="card metricCard"><h3>Valuation Context</h3><div class="metricRows" id="valuationMetrics"></div></article>
+          <article class="card halfCard"><h3>Market Momentum</h3><p class="cardLead">Trading context, not a substitute for business value.</p><div class="metricRows" id="technical"></div></article>
+          <article class="card halfCard"><h3>Insider Transactions</h3><p class="cardLead">Recent reported transactions; context matters.</p><div id="insiders"></div></article>
+          <article class="card fullCard"><details class="disclosure"><summary>How Ask Warren scored the company</summary><div class="metricRows" id="scores"></div></details></article>
+          <article class="card fullCard"><details class="disclosure"><summary>Information gaps</summary><div id="missingData"></div></details></article>
+        </div>
+      </section>
+
+      <section class="panel" id="view-evidence" role="tabpanel" hidden>
+        <div class="evidenceGrid">
+          <article class="card"><h3>Evidence Behind the View</h3><p class="cardLead">The most relevant facts and source-backed observations.</p><div id="claims"></div></article>
+          <div style="display:grid;gap:12px;align-content:start">
+            <article class="card"><h3>Evidence Quality</h3><div class="qualityRows" id="qualitySummary"></div></article>
+            <article class="card"><h3>Recent Developments</h3><div id="news"></div></article>
+          </div>
+          <article class="card" style="grid-column:1/-1"><details class="disclosure"><summary>Filing insights and research excerpts</summary><div id="webEvidence"></div></details></article>
+          <article class="card" style="grid-column:1/-1"><details class="disclosure"><summary>Questions analysts asked management</summary><div id="earningsCall"></div></details></article>
+          <article class="card" style="grid-column:1/-1"><details class="disclosure"><summary>Source availability</summary><div id="sourceStatuses"></div></details></article>
+        </div>
+      </section>
+
+      <div class="footer">Ask Warren is research software. It does not provide personalized investment advice or execute trades. Analyst price targets are estimates, not guarantees.</div>
+    </div>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const fmtNum=(v,d=1)=>v==null||Number.isNaN(Number(v))?'—':Number(v).toFixed(d);
+const fmtPct=v=>v==null||Number.isNaN(Number(v))?'—':(Number(v)*100).toFixed(1)+'%';
+const fmtMoney=v=>{if(v==null||Number.isNaN(Number(v)))return'—';let n=Number(v);if(Math.abs(n)>=1e12)return'$'+(n/1e12).toFixed(2)+'T';if(Math.abs(n)>=1e9)return'$'+(n/1e9).toFixed(1)+'B';if(Math.abs(n)>=1e6)return'$'+(n/1e6).toFixed(1)+'M';return'$'+n.toFixed(2)};
+const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+const sentence=(v,n=1)=>{let t=String(v||'').trim();if(!t)return'';return t.split(/(?<=[.!?])\s+(?=[A-Z])/).slice(0,n).join(' ')};
+function friendlyDate(value){if(!value)return null;let d=new Date(value);return Number.isNaN(d.valueOf())?null:d.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'})}
+function human(v){return String(v||'unresolved').replaceAll('_',' ').replace(/^./,c=>c.toUpperCase())}
+function metric(label,value){return `<div class="metricRow"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`}
+function sourceUrlForClaim(claim,ticker){let r=(claim?.references||[])[0]||{};if(r.url)return r.url;if(r.source==='Yahoo Finance')return `https://finance.yahoo.com/quote/${encodeURIComponent(ticker)}/analysis/`;return null}
+function citationLink(ids,e,ticker){for(let id of (ids||[])){let c=(e.claims||[]).find(x=>x.id===id),url=sourceUrlForClaim(c,ticker);if(url){let r=(c.references||[])[0]||{};return `<a class="sourcePill" href="${esc(url)}" target="_blank" rel="noopener">${esc(r.publisher||r.source||'Source')} ↗</a>`}}return''}
+function targetMarkup(m){
+  let low=Number(m.analyst_target_low),med=Number(m.analyst_target_median),high=Number(m.analyst_target_high),price=Number(m.price);
+  if(![low,med,high].every(Number.isFinite))return `<div class="muted" style="padding:18px 0">Current analyst target range unavailable.</div>`;
+  let span=Math.max(high-low,.01),pos=x=>Math.max(0,Math.min(100,(x-low)/span*100));
+  let medUp=Number.isFinite(price)&&price!==0?(med/price-1):null, lowGap=Number.isFinite(price)&&price!==0?(low/price-1):null,highGap=Number.isFinite(price)&&price!==0?(high/price-1):null;
+  return `<div class="targetTop"><div class="targetStat"><strong>${fmtMoney(low)}</strong><small>Low</small></div><div class="targetStat" style="text-align:center"><strong>${fmtMoney(med)}</strong><small>Median</small></div><div class="targetStat" style="text-align:right"><strong>${fmtMoney(high)}</strong><small>High</small></div></div>
+  <div class="rangeTrack"><div class="rangeLine"></div><i class="rangePoint" style="left:${pos(med)}%"></i>${Number.isFinite(price)?`<i class="rangePoint current" style="left:${pos(price)}%"></i><span class="rangeLabel" style="left:${pos(price)}%">${fmtMoney(price)} current</span>`:''}</div>
+  <div class="targetContext"><div><strong class="${medUp==null?'neutral':medUp>=0?'pos':'neg'}">${medUp==null?'—':(medUp>=0?'+':'')+(medUp*100).toFixed(1)+'%'}</strong><small class="muted">to median</small></div><div><strong class="${lowGap==null?'neutral':lowGap>=0?'pos':'neg'}">${lowGap==null?'—':(lowGap>=0?'+':'')+(lowGap*100).toFixed(1)+'%'}</strong><small class="muted">to low target</small></div><div><strong class="${highGap==null?'neutral':highGap>=0?'pos':'neg'}">${highGap==null?'—':(highGap>=0?'+':'')+(highGap*100).toFixed(1)+'%'}</strong><small class="muted">to high target</small></div><div><strong>${esc(m.analyst_opinion_count??'—')}</strong><small class="muted">analyst opinions</small></div></div>`;
+}
+function insightItems(a,side){
+  let structured=side==='bull'?(a.bull_insights||[]):(a.bear_insights||[]);
+  if(structured.length)return structured;
+  let legacy=side==='bull'?(a.bull_case||[]):(a.bear_case||[]);
+  return legacy.map((x,i)=>({headline:sentence(x,1)||`Investment point ${i+1}`,finding:x,investor_implication:'',cause:'',confidence:'medium',time_horizon:'unresolved',durability:'unresolved',what_to_watch:[],claim_ids:[]}));
+}
+function reasonMarkup(items,side,limit=3){
+  return items.slice(0,limit).map((x,i)=>`<div class="reason ${side==='bear'?'sell':''}"><span class="indexBadge">${i+1}</span><div><b>${esc(x.headline||sentence(x.finding,1)||'Investment consideration')}</b><small>${esc(sentence(x.investor_implication||x.finding,1))}</small></div></div>`).join('')||'<div class="muted">No strong, supported reason was available.</div>';
+}
+function insightMarkup(items,side,e,ticker){
+  return items.slice(0,6).map((x,i)=>{
+    let watch=(x.what_to_watch||[]).map(y=>`<li>${esc(y)}</li>`).join('');
+    return `<details class="insight ${side==='bear'?'bearInsight':'bullInsight'}"><summary><span class="insightNumber">${i+1}</span><span><b>${esc(x.headline||'Investment consideration')}</b><small>${esc(sentence(x.investor_implication||x.finding,1))}</small></span><span class="muted">›</span></summary><div class="insightBody"><p>${esc(sentence(`${x.finding||''} ${x.investor_implication||''}`,3))}</p><div class="metaPills"><span class="metaPill">${esc(human(x.confidence))} confidence</span><span class="metaPill">${esc(human(x.time_horizon))}</span><span class="metaPill">${esc(human(x.durability))}</span></div>${x.cause?`<div class="insightLabel">What caused it</div><p>${esc(x.cause)}</p>`:''}${x.expectation_gap?`<div class="insightLabel">Expectation gap</div><p>${esc(x.expectation_gap)}</p>`:''}${watch?`<div class="insightLabel">What to watch</div><ul>${watch}</ul>`:''}<div class="sourcePills">${citationLink(x.claim_ids,e,ticker)}</div></div></details>`;
+  }).join('')||'<div class="muted">No supported insight was available.</div>';
+}
+function decisionSignals(a){
+  let all=[...insightItems(a,'bull'),...insightItems(a,'bear')],out=[],seen=new Set();
+  for(let x of all){for(let w of (x.what_to_watch||[])){let t=String(w||'').trim(),k=t.toLowerCase();if(!t||seen.has(k)||/earnings (report|release|date)|calendar/i.test(t))continue;seen.add(k);out.push(t)}}
+  for(let w of (a.what_would_change_view||[])){let t=String(w||'').trim(),k=t.toLowerCase();if(t&&!seen.has(k)){seen.add(k);out.push(t)}}
+  return out.slice(0,5);
+}
+function qualityMarkup(statuses){
+  let total=statuses.length,ok=statuses.filter(x=>x.status==='ok').length,pct=total?Math.round(ok/total*100):0;
+  let row=(label,value,width,color='var(--green)')=>`<div class="qualityRow"><span>${esc(label)}</span><strong>${esc(value)}</strong><div class="qualityBar"><i style="width:${width}%;background:${color}"></i></div></div>`;
+  let filings=statuses.filter(x=>/SEC|filing|earnings-call/i.test(x.source||'')),forward=statuses.filter(x=>/Yahoo|Exa|earnings-call/i.test(x.source||''));
+  let grade=g=>!g.length?'Unavailable':g.every(x=>x.status==='ok')?'Strong':g.some(x=>x.status==='ok')?'Partial':'Limited';
+  return row('All sources',`${ok}/${total||0} available`,pct,pct>=75?'var(--green)':'var(--amber)')+row('Filings & management',grade(filings),grade(filings)==='Strong'?92:55,grade(filings)==='Strong'?'var(--green)':'var(--amber)')+row('Forward-looking evidence',grade(forward),grade(forward)==='Strong'?88:62,grade(forward)==='Strong'?'var(--green)':'var(--amber)');
+}
+function evidenceExcerpt(item){
+  let text=String((item.highlights||[])[0]||'').replace(/\s+/g,' ').trim();
+  if(!text)return'';
+  if(text.length>560)text=text.slice(0,557)+'…';
+  return `<div class="sourceRow"><strong>${item.url?`<a href="${esc(item.url)}" target="_blank" rel="noopener">${esc(item.title||'Supporting evidence')} ↗</a>`:esc(item.title||'Supporting evidence')}</strong>${item.published_at?`<small>${esc(String(item.published_at).slice(0,10))}</small>`:''}<p>${esc(text)}</p></div>`;
+}
+function sourceRows(list,mapper){return (list||[]).map(mapper).join('')||'<div class="muted">No data was available.</div>'}
+function activateTab(name,focus=true){
+  document.querySelectorAll('.tab').forEach(t=>{let active=t.dataset.panel===name;t.setAttribute('aria-selected',String(active));t.tabIndex=active?0:-1});
+  document.querySelectorAll('.panel').forEach(p=>p.hidden=p.id!==`view-${name}`);
+  if(focus)$(`tab-${name}`)?.focus();
+}
+function expectationRead(revisions,m){
+  let deltas=revisions.map(x=>({h:x.horizon,d:(x.eps_current!=null&&x.eps_30d_ago!=null&&Number(x.eps_30d_ago)!==0)?Number(x.eps_current)/Number(x.eps_30d_ago)-1:null})).filter(x=>x.d!=null);
+  if(!deltas.length)return 'Analyst estimate revisions are incomplete, so Warren treats price targets as context rather than a strong signal.';
+  let avg=deltas.reduce((a,b)=>a+b.d,0)/deltas.length,med=m.analyst_target_median,price=m.price,up=(med!=null&&price)?Number(med)/Number(price)-1:null;
+  if(avg>.02&&up!=null&&up>0)return 'Analyst estimates have generally improved while the median price target remains above the current share price. That supports the outlook, but the target range still reflects uncertainty.';
+  if(avg<-.02)return 'Analyst earnings expectations have generally moved lower over the past month. Warren treats that as a meaningful warning signal even if headline price targets have not fully adjusted.';
+  return 'Analyst estimates are relatively stable. Warren gives more weight to the business evidence and the gap between the current price and the target range than to small estimate changes.';
+}
+function render(data){
+  const m=data.metrics||{},s=data.scores||{},a=data.analysis||{},e=data.evidence||{};
+  const ticker=data.ticker||'',bull=insightItems(a,'bull'),bear=insightItems(a,'bear'),statuses=e.source_status||[];
+  $('companyTicker').textContent=ticker.slice(0,4);$('companyName').textContent=m.company_name||ticker;
+  $('companyMeta').textContent=[ticker,m.sector,m.industry].filter(Boolean).join(' · ');
+  $('price').textContent=m.price==null?'Price unavailable':`${m.currency||'$'} ${Number(m.price).toFixed(2)}`;
+  $('priceContext').textContent=friendlyDate(e.collected_at||m.fetched_at)?`Updated ${friendlyDate(e.collected_at||m.fetched_at)}`:'Current market price';
+  let verdict=String(a.verdict||'watch').toLowerCase();$('verdict').textContent=verdict; $('verdict').className=`verdict ${verdict==='attractive'?'attractive':verdict==='avoid'?'avoid':'watch'}`;
+  let confMap={high:82,medium:68,low:45},conf=confMap[String(a.confidence||'medium').toLowerCase()]||68;
+  $('confidence').textContent=`${conf}%`; $('confidenceRing').style.setProperty('--p',conf);
+  $('viewSummary').textContent=sentence(a.thesis,2)||'Warren is weighing business quality, expectations, valuation context, and evidence quality.';
+  $('thesis').textContent=sentence(a.thesis,3)||'Investment thesis unavailable.';
+  let targetHtml=targetMarkup(m);$('targetsOverview').innerHTML=targetHtml;$('targetsDetail').innerHTML=targetHtml;
+  let yahoo=`https://finance.yahoo.com/quote/${encodeURIComponent(ticker)}/analysis/`;$('analystSource').href=yahoo;$('analystSource2').href=yahoo;
+  let take=[...bull.slice(0,2),...bear.slice(0,2)].slice(0,4);
+  $('takeaways').innerHTML=take.map((x,i)=>`<div class="takeaway"><span class="indexBadge">${i+1}</span><div><b>${esc(x.headline||'Investment consideration')}</b><small>${esc(sentence(x.investor_implication||x.finding,1))}</small></div></div>`).join('')||'<div class="muted">No supported takeaway was available.</div>';
+  $('ownReasons').innerHTML=reasonMarkup(bull,'bull',3);$('sellReasons').innerHTML=reasonMarkup(bear,'bear',3);
+  $('watchSignals').innerHTML=decisionSignals(a).map((x,i)=>`<div class="watchItem"><span class="indexBadge">${i+1}</span><div><b>${esc(x)}</b><small>Monitor this signal because it could strengthen or weaken the current thesis.</small></div></div>`).join('')||'<div class="muted">No specific monitoring signal was available.</div>';
+  $('bullCases').innerHTML=insightMarkup(bull,'bull',e,ticker);$('bearCases').innerHTML=insightMarkup(bear,'bear',e,ticker);
+
+  let rev=e.estimate_revisions||[],hLabel={'0q':'Current quarter','+1q':'Next quarter','0y':'Current year','+1y':'Next year'};
+  $('revisions').innerHTML=sourceRows(rev.slice(0,6),x=>{let d=(x.eps_current!=null&&x.eps_30d_ago!=null&&Number(x.eps_30d_ago)!==0)?Number(x.eps_current)/Number(x.eps_30d_ago)-1:null;return `<div class="revisionRow"><div><strong>${esc(hLabel[x.horizon]||`Estimate ${x.horizon||''}`)}</strong><small>EPS ${x.eps_current==null?'—':Number(x.eps_current).toFixed(2)} · 30d ago ${x.eps_30d_ago==null?'—':Number(x.eps_30d_ago).toFixed(2)} · ${esc(x.analyst_count??'—')} analysts</small></div><div class="revisionDelta ${d==null?'neutral':d>=0?'pos':'neg'}">${d==null?'—':(d>=0?'+':'')+(d*100).toFixed(1)+'%'}</div></div>`});
+  let hist=e.earnings_history||[];$('earningsHistory').innerHTML=sourceRows(hist.slice(0,5),x=>{let surprise=x.surprise_percent;return `<div class="historyRow"><b>${esc(friendlyDate(x.period)||'Reported period')}</b><small>EPS ${x.eps_actual==null?'—':Number(x.eps_actual).toFixed(2)} vs ${x.eps_estimate==null?'—':Number(x.eps_estimate).toFixed(2)} expected · <span class="${surprise==null?'neutral':Number(surprise)>=0?'pos':'neg'}">${surprise==null?'surprise unavailable':fmtPct(surprise)+' surprise'}</span></small></div>`});
+  let deltas=rev.slice(0,6).map(x=>({label:hLabel[x.horizon]||x.horizon||'Estimate',d:(x.eps_current!=null&&x.eps_30d_ago!=null&&Number(x.eps_30d_ago)!==0)?Number(x.eps_current)/Number(x.eps_30d_ago)-1:0}));
+  let max=Math.max(...deltas.map(x=>Math.abs(x.d)),.01);$('revisionBars').innerHTML=deltas.map(x=>`<div class="miniBarWrap"><div class="miniBar" style="height:${Math.max(8,Math.abs(x.d)/max*100)}%;background:${x.d<0?'linear-gradient(180deg,var(--red),#9c4548)':'linear-gradient(180deg,var(--green),#2b8f5c)'}"></div><div class="miniBarLabel">${esc(x.label)}</div></div>`).join('')||'<div class="muted">Estimate revision history unavailable.</div>';
+  $('expectationRead').textContent=expectationRead(rev,m);
+
+  $('businessMetrics').innerHTML=[
+    metric('Revenue',fmtMoney(m.revenue)),metric('Revenue growth',fmtPct(m.revenue_growth)),metric('Earnings growth',fmtPct(m.earnings_growth)),metric('Market cap',fmtMoney(m.market_cap))
+  ].join('');
+  $('cashMetrics').innerHTML=[metric('Gross margin',fmtPct(m.gross_margin)),metric('Operating margin',fmtPct(m.operating_margin)),metric('Free cash flow',fmtMoney(m.free_cash_flow)),metric('Return on equity',fmtPct(m.return_on_equity))].join('');
+  let fcfYield=(m.free_cash_flow!=null&&m.market_cap)?m.free_cash_flow/m.market_cap:null;
+  $('valuationMetrics').innerHTML=[metric('Trailing P/E',m.trailing_pe==null?'—':fmtNum(m.trailing_pe)+'x'),metric('Forward P/E',m.forward_pe==null?'—':fmtNum(m.forward_pe)+'x'),metric('PEG',fmtNum(m.peg_ratio)),metric('EV / EBITDA',m.enterprise_to_ebitda==null?'—':fmtNum(m.enterprise_to_ebitda)+'x'),metric('FCF yield',fmtPct(fcfYield))].join('');
+  let t=(e.technical||[])[0]||{};$('technical').innerHTML=[metric('Close',fmtNum(t.close,2)),metric('50-day SMA',fmtNum(t.sma_50,2)),metric('200-day SMA',fmtNum(t.sma_200,2)),metric('RSI (14)',fmtNum(t.rsi_14,1)),metric('MACD',fmtNum(t.macd,3)),metric('20d avg volume',t.avg_volume_20==null?'—':Math.round(t.avg_volume_20).toLocaleString())].join('');
+  $('insiders').innerHTML=sourceRows((e.insider_transactions||[]).slice(0,6),x=>`<div class="sourceRow"><strong>${esc(x.insider||'Reported insider')}</strong><small>${esc([x.start_date?friendlyDate(x.start_date):'',x.transaction,x.shares!=null?Number(x.shares).toLocaleString()+' shares':'',x.value!=null?fmtMoney(x.value):''].filter(Boolean).join(' · '))}</small></div>`);
+  $('scores').innerHTML=[metric('Overall',fmtNum(s.overall,0)+'/100'),metric('Fundamentals',fmtNum(s.fundamentals,0)+'/100'),metric('Valuation',fmtNum(s.valuation,0)+'/100'),metric('Business quality',fmtNum(s.business_quality,0)+'/100'),metric('Growth',fmtNum(s.growth,0)+'/100'),metric('Risk resilience',fmtNum(s.risk_resilience,0)+'/100')].join('');
+  $('missingData').innerHTML=(data.missing_data||[]).map(x=>`<div class="sourceRow"><strong>${esc(human(String(x).replaceAll('_',' ')))}</strong></div>`).join('')||'<div class="muted">No material information gaps were reported.</div>';
+
+  $('qualitySummary').innerHTML=qualityMarkup(statuses);
+  $('claims').innerHTML=sourceRows((e.claims||[]).slice(0,12),c=>{let r=(c.references||[])[0]||{},url=sourceUrlForClaim(c,ticker);return `<div class="sourceRow"><strong>${url?`<a href="${esc(url)}" target="_blank" rel="noopener">${esc(c.claim||'Evidence item')} ↗</a>`:esc(c.claim||'Evidence item')}</strong><small>${esc(r.publisher||r.source||'Source')} · ${esc(human(c.confidence))} confidence</small></div>`});
+  $('news').innerHTML=sourceRows((e.news||[]).slice(0,6),x=>`<div class="sourceRow"><strong>${x.url?`<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)} ↗</a>`:esc(x.title)}</strong><small>${esc([x.publisher,x.published_at?String(x.published_at).slice(0,10):'headline only'].filter(Boolean).join(' · '))}</small></div>`);
+  $('webEvidence').innerHTML=(e.web||[]).map(evidenceExcerpt).filter(Boolean).slice(0,8).join('')||'<div class="muted">No readable filing or research passages were available.</div>';
+  $('earningsCall').innerHTML=sourceRows((e.earnings_call_qa||[]).slice(0,6),x=>`<div class="sourceRow"><strong>${esc(x.analyst||'Analyst question')} · ${esc(x.quarter||'Quarter')}</strong><p><b>Question:</b> ${esc(x.question)}</p><p><b>${esc(x.responder||'Management')}:</b> ${esc(x.answer)}</p>${x.source_url?`<small><a href="${esc(x.source_url)}" target="_blank" rel="noopener">Transcript provider ↗</a></small>`:''}</div>`);
+  let statusLabel={ok:'Available',partial:'Partial',unavailable:'Unavailable',error:'Error'};$('sourceStatuses').innerHTML=statuses.map(x=>`<div class="sourceRow"><strong>${esc(x.source)}</strong><small>${esc(statusLabel[x.status]||human(x.status))}${x.detail?' · '+esc(x.detail):''}</small></div>`).join('')||'<div class="muted">Source status unavailable.</div>';
+
+  $('appTicker').value=ticker;$('landingTicker').value=ticker;document.body.classList.add('has-results');activateTab('overview',false);
+  let recent=JSON.parse(localStorage.getItem('ask-warren-recent')||'[]').filter(x=>x!==ticker);recent.unshift(ticker);recent=recent.slice(0,6);localStorage.setItem('ask-warren-recent',JSON.stringify(recent));renderRecent(recent,ticker);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function renderRecent(recent,current){$('recentList').innerHTML=(recent||[]).map(t=>`<button class="recentTicker ${t===current?'active':''}" type="button" data-recent="${esc(t)}">${esc(t)}</button>`).join('');document.querySelectorAll('[data-recent]').forEach(b=>b.addEventListener('click',()=>run(b.dataset.recent)))}
+function showToast(text){$('toast').textContent=text;$('toast').style.display='block';setTimeout(()=>$('toast').style.display='none',2200)}
+async function shareAnalysis(){let url=location.href;try{if(navigator.share){await navigator.share({title:'Ask Warren analysis',url})}else{await navigator.clipboard.writeText(url);showToast('Analysis link copied')}}catch(_){}}
+async function run(value){
+  let t=String(value||'').trim().toUpperCase();
+  if(!/^[A-Z][A-Z0-9.-]{0,11}$/.test(t)){document.body.classList.remove('has-results');$('status').className='status error';$('status').textContent='Enter a valid U.S. stock ticker.';$('status').style.display='block';return}
+  $('status').className='status';$('status').style.display='block';$('status').innerHTML='<span class="spinner"></span>Collecting market data, analyst expectations, evidence, and competing views…';
+  try{
+    let r=await fetch('/v1/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:'deep',ticker:t})}),body=await r.json();
+    if(!r.ok)throw new Error(body.detail||'Analysis failed');
+    render(body);history.replaceState(null,'',`/?ticker=${encodeURIComponent(t)}`);$('status').style.display='none';
+  }catch(err){document.body.classList.remove('has-results');$('status').className='status error';$('status').textContent=`Could not analyze ${t}: ${err.message}`;$('status').style.display='block'}
+}
+$('landingForm').addEventListener('submit',e=>{e.preventDefault();run($('landingTicker').value)});
+$('appForm').addEventListener('submit',e=>{e.preventDefault();run($('appTicker').value)});
+document.querySelectorAll('[data-t]').forEach(b=>b.addEventListener('click',()=>run(b.dataset.t)));
+document.querySelectorAll('[data-focus-search]').forEach(b=>b.addEventListener('click',()=>{$('landingTicker').focus();$('landingTicker').scrollIntoView({behavior:'smooth',block:'center'})}));
+$('newAnalysis').addEventListener('click',()=>{document.body.classList.remove('has-results');history.replaceState(null,'','/');setTimeout(()=>$('landingTicker').focus(),50)});
+$('shareButton').addEventListener('click',shareAnalysis);$('shareSide').addEventListener('click',shareAnalysis);
+document.querySelectorAll('.tab').forEach((tab,index,tabs)=>{tab.addEventListener('click',()=>activateTab(tab.dataset.panel,false));tab.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight'].includes(e.key))return;e.preventDefault();let next=(index+(e.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;activateTab(tabs[next].dataset.panel)})});
+renderRecent(JSON.parse(localStorage.getItem('ask-warren-recent')||'[]'),null);
+let initial=new URLSearchParams(location.search).get('ticker');if(initial)run(initial);
+</script>
+</body>
+</html>
