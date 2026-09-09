@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Methodology | Ask Warren</title>
+<meta name="description" content="How Ask Warren evaluates a company using evidence, competing investment cases, analyst expectations, financial context, and source quality.">
+<style>
+:root{color-scheme:dark;--bg:#07100d;--surface:#0e1915;--line:#21372d;--text:#f6f8f7;--muted:#9cafa5;--green:#71e5a5;--amber:#f4c65d;--red:#f27478;--blue:#84b7ff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 76% -10%,#143225 0,var(--bg) 32%);color:var(--text);font:15px/1.65 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}a{color:inherit;text-decoration:none}:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+header{height:70px;border-bottom:1px solid var(--line);background:rgba(7,16,13,.9);backdrop-filter:blur(16px);position:sticky;top:0;z-index:10}.inner{max-width:1040px;margin:auto;padding:0 24px}.headerInner{height:70px;display:flex;align-items:center;gap:24px}.brand{font-weight:850;font-size:18px}.brand span{color:var(--green);margin-right:8px}.nav{margin-left:auto;display:flex;gap:8px}.nav a{padding:9px 11px;border-radius:8px;color:#bac9c1}.nav a:hover{background:#102019;color:white}
+main{max-width:1040px;margin:auto;padding:62px 24px 80px}.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.11em;color:var(--green);font-weight:850}h1{font-size:48px;letter-spacing:-.045em;line-height:1.05;margin:12px 0 16px}h2{font-size:24px;letter-spacing:-.02em;margin:0 0 10px}h3{font-size:16px;margin:0 0 7px}.lead{font-size:19px;color:#ccd8d2;max-width:760px;margin:0 0 34px}.note{border-left:3px solid var(--green);background:#0d1a15;padding:15px 17px;border-radius:0 10px 10px 0;color:#c8d5cf;margin:24px 0 42px}
+.section{padding:34px 0;border-top:1px solid var(--line)}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:17px}.card{background:linear-gradient(180deg,#0f1b17,#0b1512);border:1px solid var(--line);border-radius:13px;padding:18px}.card p{color:var(--muted);margin:6px 0 0}.steps{display:grid;gap:0;margin-top:18px}.step{display:grid;grid-template-columns:38px 1fr;gap:13px;padding:18px 0;border-top:1px solid var(--line)}.step:first-child{border-top:0}.num{width:32px;height:32px;border-radius:50%;background:#163326;color:var(--green);display:grid;place-items:center;font-weight:900}.step p{margin:4px 0 0;color:var(--muted)}
+.target{margin-top:18px;background:#0d1814;border:1px solid var(--line);border-radius:13px;padding:20px}.targetTop{display:flex;justify-content:space-between;gap:14px}.targetTop div{text-align:center}.targetTop div:first-child{text-align:left}.targetTop div:last-child{text-align:right}.targetTop strong{display:block;font-size:20px}.targetTop small{color:var(--muted)}.track{height:2px;background:#667970;margin:34px 3px 16px;position:relative}.track i{position:absolute;left:50%;top:-6px;width:14px;height:14px;border-radius:50%;background:var(--green);transform:translateX(-50%)}.targetExplain{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px}.targetExplain div{padding-top:12px;border-top:1px solid var(--line)}.targetExplain b{display:block}.targetExplain small{color:var(--muted)}
+.verdicts{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px}.verdict{border:1px solid var(--line);border-radius:13px;padding:18px;background:#0d1814}.pill{display:inline-block;border-radius:7px;padding:7px 10px;font-weight:900;text-transform:uppercase;font-size:12px}.att{background:var(--green);color:#05100a}.watch{background:var(--amber);color:#1e1604}.avoid{background:var(--red);color:#200507}.verdict p{color:var(--muted)}
+ul{color:#c2d0c9}.footer{padding-top:26px;border-top:1px solid var(--line);color:#7f9388;font-size:12px}
+@media(max-width:700px){main{padding:42px 16px 60px}.inner{padding:0 16px}h1{font-size:40px}.grid,.verdicts,.targetExplain{grid-template-columns:1fr}.nav a:nth-child(2){display:none}}
+</style>
+</head>
+<body>
+<header><div class="inner headerInner"><a class="brand" href="/"><span>⌁</span>Ask Warren</a><nav class="nav"><a href="/">Analyze</a><a href="/roadmap">Roadmap</a></nav></div></header>
+<main>
+  <div class="eyebrow">Methodology</div>
+  <h1>How Warren researches a company.</h1>
+  <p class="lead">Warren is an investment research analyst persona. The product is designed to help you understand the strongest evidence for and against an investment—not to imitate Warren Buffett or manufacture a precise “correct” price.</p>
+  <div class="note">Ask Warren separates structured financial computation from narrative analysis. Reproducible metrics are calculated from structured data; the analysis layer explains what those facts may mean, challenges the thesis, and traces important conclusions back to sources.</div>
+
+  <section class="section">
+    <h2>What Warren evaluates</h2>
+    <div class="grid">
+      <article class="card"><h3>Business quality</h3><p>Margins, cash generation, returns, resilience, capital allocation, and evidence of durable competitive strength.</p></article>
+      <article class="card"><h3>Growth &amp; expectations</h3><p>Revenue and earnings growth, analyst estimates, estimate revisions, recent surprises, and forward-looking evidence.</p></article>
+      <article class="card"><h3>Valuation context</h3><p>Common valuation ratios, free-cash-flow yield, current market expectations, and the analyst price-target range.</p></article>
+      <article class="card"><h3>Risk &amp; evidence quality</h3><p>Execution, financial, regulatory, competitive and demand risks, plus the completeness and authority of retrieved sources.</p></article>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Analyst price targets, not an Ask Warren fair-value forecast</h2>
+    <p>Ask Warren uses the reported analyst low, median, and high price targets as one input into the research view. It does not present a proprietary DCF value as a price prediction in the user experience.</p>
+    <div class="target">
+      <div class="targetTop"><div><strong>$210</strong><small>Low</small></div><div><strong>$245</strong><small>Median</small></div><div><strong>$285</strong><small>High</small></div></div>
+      <div class="track"><i></i></div>
+      <div class="targetExplain">
+        <div><b>Median preferred</b><small>The median is less sensitive to one unusually high or low target than the mean.</small></div>
+        <div><b>Targets are estimates</b><small>They reflect analyst expectations, assumptions, and timing. They are not guarantees.</small></div>
+        <div><b>Revisions matter</b><small>Warren also looks at whether earnings expectations are moving up or down, not just the headline target.</small></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>The research workflow</h2>
+    <div class="steps">
+      <div class="step"><div class="num">1</div><div><h3>Collect structured company data</h3><p>Market data, financial statements, analyst estimates, revisions, earnings history, technical context, and other structured inputs.</p></div></div>
+      <div class="step"><div class="num">2</div><div><h3>Retrieve evidence</h3><p>Primary filing material, filing passages, recent headlines, earnings-call analyst Q&amp;A when available, and selected macro or web research.</p></div></div>
+      <div class="step"><div class="num">3</div><div><h3>Build competing cases</h3><p>The Bull and Bear perspectives independently identify the strongest supported arguments rather than forcing a single narrative too early.</p></div></div>
+      <div class="step"><div class="num">4</div><div><h3>Evaluate the evidence</h3><p>Warren weighs business quality, expectations, valuation context, risks, source strength, and missing information.</p></div></div>
+      <div class="step"><div class="num">5</div><div><h3>State the view and what could change it</h3><p>The result is a three-state research verdict, confidence level, strongest reasons to own or wait, and observable signals that could change the thesis.</p></div></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Warren's three research verdicts</h2>
+    <div class="verdicts">
+      <article class="verdict"><span class="pill att">Attractive</span><p>The current evidence suggests a favorable balance between business quality, expectations, valuation context, and risk.</p></article>
+      <article class="verdict"><span class="pill watch">Watch</span><p>The company may be strong, but the evidence, expectations, price, or uncertainty do not yet support an attractive conclusion.</p></article>
+      <article class="verdict"><span class="pill avoid">Avoid</span><p>The current evidence points to an unfavorable risk/reward or a materially weakened investment case.</p></article>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Evidence discipline</h2>
+    <ul>
+      <li>Retrieved filing metadata, structured XBRL facts, filing passages, news headlines, estimates, and transcript excerpts are treated as different evidence types.</li>
+      <li>Headlines are not treated as if the underlying article was fully read.</li>
+      <li>Missing or partial sources reduce confidence instead of silently disappearing.</li>
+      <li>Important supported arguments expose source links so the user can inspect the evidence.</li>
+      <li>Unsupported filler is not added merely to reach a fixed number of Bull or Bear points.</li>
+    </ul>
+  </section>
+
+  <section class="section">
+    <h2>Limits</h2>
+    <p>Analyst targets can be stale, biased, clustered, or wrong. Market-data providers can return incomplete fields. News headlines lack full article context. Filing retrieval may miss relevant passages. Model-generated synthesis can make reasoning mistakes. Ask Warren should therefore be used as a research aid, with important conclusions verified against primary sources.</p>
+  </section>
+
+  <div class="footer">Research software only. Ask Warren does not provide personalized investment advice, guarantee returns, or execute trades.</div>
+</main>
+</body>
+</html>

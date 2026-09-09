@@ -62,7 +62,7 @@ engine = Warren(
 
 app = FastAPI(
     title="Ask Warren Stock Intelligence",
-    version="0.7.1",
+    version="0.8.0",
     description="Standalone stock research experience powered by the reusable Warren engine.",
 )
 
@@ -71,7 +71,7 @@ WEB_DIR = Path(__file__).resolve().parents[1] / "web"
 
 @app.get("/", include_in_schema=False)
 def analyze_page() -> FileResponse:
-    return FileResponse(WEB_DIR / "index.html", media_type="text/html")
+    return FileResponse(WEB_DIR / "index-v2.html", media_type="text/html")
 
 
 @app.get("/health")
@@ -95,7 +95,7 @@ def health() -> dict[str, str]:
 
 @app.get("/methodology", include_in_schema=False)
 def methodology_page() -> FileResponse:
-    return FileResponse(WEB_DIR / "methodology.html", media_type="text/html")
+    return FileResponse(WEB_DIR / "methodology-v2.html", media_type="text/html")
 
 
 @app.get("/roadmap", include_in_schema=False)
