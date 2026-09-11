@@ -41,32 +41,27 @@ def test_analyze_page_is_served():
     response = client.get("/")
 
     assert response.status_code == 200
-    assert "Ask Warren about a stock." in response.text
-    assert "U.S. equities V1" in response.text
-    assert "Investment View" in response.text
+    assert "Research any company with" in response.text
+    assert "Evidence-backed analysis. Clear reasoning. No hype." in response.text
+    assert "Warren's View" in response.text
     assert "Bull &amp; Bear" in response.text
-    assert "Source availability and analysis coverage" in response.text
     assert "Filing insights and research excerpts" in response.text
-    assert "Evidence behind the view" in response.text
-    assert "Market momentum" in response.text
-    assert "Insider transactions" in response.text
+    assert "Evidence Behind the View" in response.text
+    assert "Market Momentum" in response.text
+    assert "Insider Transactions" in response.text
     assert "Methodology" in response.text
     assert 'aria-live="polite"' in response.text
     assert "Information gaps" in response.text
     assert "history.replaceState" in response.text
-    assert "Assumptions and sensitivity" in response.text
+    assert "Expectations" in response.text
     assert "What caused it" in response.text
     assert "What to watch" in response.text
-    assert "Next decision point" in response.text
-    assert "Open any point for its cause" in response.text
-    assert "Strongest reasons to own" in response.text
-    assert "Strongest reasons to sell or wait" in response.text
+    assert "Strongest Reasons to Own" in response.text
+    assert "Strongest Reasons to Sell or Wait" in response.text
     assert "6 strongest reasons" not in response.text
-    assert "Analyst price targets" in response.text
-    assert "Signals that could change the view" in response.text
-    assert "firstSentences" in response.text
-    assert "Evidence confidence" in response.text
-    assert "Analysis updated" in response.text
+    assert "Analyst Price Targets" in response.text
+    assert "What Could Change Warren's View" in response.text
+    assert "Evidence Quality" in response.text
     assert "Watchlist" not in response.text
     assert "unreconciled difference" not in response.text.lower()
     assert "0.69936" not in response.text
@@ -77,7 +72,7 @@ def test_methodology_page_is_served():
     response = client.get("/methodology")
 
     assert response.status_code == 200
-    assert "Understand the reasoning, not just the rating." in response.text
+    assert "How Warren researches a company." in response.text
     assert "Attractive" in response.text
     assert "Watch" in response.text
     assert "Avoid" in response.text

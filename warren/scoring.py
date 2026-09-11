@@ -13,18 +13,26 @@ def _avg(values: Iterable[float | None], default: float = 50.0) -> float:
 def _higher(value: float | None, bands: list[tuple[float, float]]) -> float | None:
     if value is None:
         return None
-    for threshold, score in bands:
+    for index, (threshold, score) in enumerate(bands):
         if value >= threshold:
-            return score
+            if index == 0:
+                return score
+            upper_threshold, upper_score = bands[index - 1]
+            position = (value - threshold) / (upper_threshold - threshold)
+            return round(score + position * (upper_score - score), 1)
     return 10.0
 
 
 def _lower(value: float | None, bands: list[tuple[float, float]]) -> float | None:
     if value is None or value < 0:
         return None
-    for threshold, score in bands:
+    for index, (threshold, score) in enumerate(bands):
         if value <= threshold:
-            return score
+            if index == 0:
+                return score
+            lower_threshold, lower_score = bands[index - 1]
+            position = (value - lower_threshold) / (threshold - lower_threshold)
+            return round(lower_score + position * (score - lower_score), 1)
     return 10.0
 
 

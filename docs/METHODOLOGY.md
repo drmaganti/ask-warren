@@ -40,6 +40,8 @@ Market context     5%
 
 This weighting reflects a long-term fundamental-research orientation rather than a short-term trading model.
 
+Each input is scored by interpolating between the published band thresholds. A company whose metric sits between two thresholds therefore receives a proportionate score rather than the same fixed bucket score as every company in that range. Exact threshold scores and the overall category weights remain unchanged.
+
 ### Fundamentals
 
 Initial inputs include:
