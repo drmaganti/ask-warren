@@ -62,6 +62,10 @@ def test_analyze_page_is_served():
     assert "Analyst Price Targets" in response.text
     assert "What Could Change Warren's View" in response.text
     assert "Evidence Quality" in response.text
+    assert "Evidence confidence" in response.text
+    assert "confMap={high:82,medium:68,low:45}" not in response.text
+    assert "recentList').addEventListener('click'" in response.text
+    assert "Current report retained" in response.text
     assert "Watchlist" not in response.text
     assert "unreconciled difference" not in response.text.lower()
     assert "0.69936" not in response.text

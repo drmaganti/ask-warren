@@ -85,7 +85,8 @@ body.has-results .siteHeader{display:none}
 .sideGroup{margin-top:18px;border-top:1px solid var(--line);padding-top:14px}
 .sideLabel{padding:0 11px 7px;color:#71867b;text-transform:uppercase;letter-spacing:.09em;font-size:10px;font-weight:800}
 .recentList{display:grid;gap:2px}
-.recentTicker{padding:7px 11px;border-radius:8px;color:#9fb2a8;font-size:12px}
+.recentTicker{width:100%;padding:7px 11px;border:0;border-radius:8px;background:transparent;color:#9fb2a8;font-size:12px;text-align:left}
+.recentTicker:hover{background:#0e1d17;color:#fff}
 .recentTicker.active{background:#101e19;color:#fff}
 .sideBottom{margin-top:auto}
 .mobileAppHeader{display:none}
@@ -123,9 +124,9 @@ body.has-results .siteHeader{display:none}
 .verdict.attractive{background:var(--green);color:#06110b}
 .verdict.watch{background:var(--amber);color:#1e1604}
 .verdict.avoid{background:var(--red);color:#210607}
-.confidenceRing{--p:72;width:68px;height:68px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--green) calc(var(--p)*1%),#25372f 0);position:relative}
-.confidenceRing:after{content:"";position:absolute;inset:6px;border-radius:50%;background:#0d1814}
-.confidenceRing span{position:relative;z-index:1;font-weight:900}
+.confidenceBadge{min-width:92px;padding:8px 11px;border:1px solid #315d47;border-radius:9px;background:#12271e;text-align:center}
+.confidenceBadge span{display:block;color:var(--green);font-size:13px;font-weight:850}
+.confidenceBadge small{display:block;margin-top:1px;color:var(--muted);font-size:10px}
 .viewSummary{color:#d3ddd8;margin:0}
 .targetTop{display:flex;justify-content:space-between;gap:18px;margin:16px 0}
 .targetStat strong{display:block;font-size:20px}
@@ -315,7 +316,7 @@ details.disclosure summary{cursor:pointer;color:#b9c9c1;padding:9px 0;font-weigh
         <div class="grid12">
           <article class="card viewCard">
             <h3>Warren's View</h3>
-            <div class="viewRow"><span class="verdict watch" id="verdict">WATCH</span><div class="confidenceRing" id="confidenceRing"><span id="confidence">—</span></div></div>
+            <div class="viewRow"><span class="verdict watch" id="verdict">WATCH</span><div class="confidenceBadge"><span id="confidence">—</span><small>Evidence confidence</small></div></div>
             <p class="viewSummary" id="viewSummary"></p>
           </article>
           <article class="card targetsCard">
@@ -456,8 +457,7 @@ function render(data){
   $('price').textContent=m.price==null?'Price unavailable':`${m.currency||'$'} ${Number(m.price).toFixed(2)}`;
   $('priceContext').textContent=friendlyDate(e.collected_at||m.fetched_at)?`Updated ${friendlyDate(e.collected_at||m.fetched_at)}`:'Current market price';
   let verdict=String(a.verdict||'watch').toLowerCase();$('verdict').textContent=verdict; $('verdict').className=`verdict ${verdict==='attractive'?'attractive':verdict==='avoid'?'avoid':'watch'}`;
-  let confMap={high:82,medium:68,low:45},conf=confMap[String(a.confidence||'medium').toLowerCase()]||68;
-  $('confidence').textContent=`${conf}%`; $('confidenceRing').style.setProperty('--p',conf);
+  $('confidence').textContent=human(a.confidence||'medium');
   $('viewSummary').textContent=sentence(a.thesis,2)||'Warren is weighing business quality, expectations, valuation context, and evidence quality.';
   $('thesis').textContent=sentence(a.thesis,3)||'Investment thesis unavailable.';
   let targetHtml=targetMarkup(m);$('targetsOverview').innerHTML=targetHtml;$('targetsDetail').innerHTML=targetHtml;
@@ -497,22 +497,24 @@ function render(data){
   let recent=JSON.parse(localStorage.getItem('ask-warren-recent')||'[]').filter(x=>x!==ticker);recent.unshift(ticker);recent=recent.slice(0,6);localStorage.setItem('ask-warren-recent',JSON.stringify(recent));renderRecent(recent,ticker);
   window.scrollTo({top:0,behavior:'smooth'});
 }
-function renderRecent(recent,current){$('recentList').innerHTML=(recent||[]).map(t=>`<button class="recentTicker ${t===current?'active':''}" type="button" data-recent="${esc(t)}">${esc(t)}</button>`).join('');document.querySelectorAll('[data-recent]').forEach(b=>b.addEventListener('click',()=>run(b.dataset.recent)))}
+function renderRecent(recent,current){$('recentList').innerHTML=(recent||[]).map(t=>`<button class="recentTicker ${t===current?'active':''}" type="button" data-recent="${esc(t)}" aria-current="${t===current?'page':'false'}">${esc(t)}</button>`).join('')}
 function showToast(text){$('toast').textContent=text;$('toast').style.display='block';setTimeout(()=>$('toast').style.display='none',2200)}
 async function shareAnalysis(){let url=location.href;try{if(navigator.share){await navigator.share({title:'Ask Warren analysis',url})}else{await navigator.clipboard.writeText(url);showToast('Analysis link copied')}}catch(_){}}
-async function run(value){
+async function run(value,preserveReport=false){
   let t=String(value||'').trim().toUpperCase();
   if(!/^[A-Z][A-Z0-9.-]{0,11}$/.test(t)){document.body.classList.remove('has-results');$('status').className='status error';$('status').textContent='Enter a valid U.S. stock ticker.';$('status').style.display='block';return}
+  if(preserveReport){$('appTicker').value=t;$('priceContext').textContent=`Loading ${t} report…`;showToast(`Loading ${t} report…`)}
   $('status').className='status';$('status').style.display='block';$('status').innerHTML='<span class="spinner"></span>Collecting market data, analyst expectations, evidence, and competing views…';
   try{
     let r=await fetch('/v1/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:'deep',ticker:t})}),body=await r.json();
     if(!r.ok)throw new Error(body.detail||'Analysis failed');
     render(body);history.replaceState(null,'',`/?ticker=${encodeURIComponent(t)}`);$('status').style.display='none';
-  }catch(err){document.body.classList.remove('has-results');$('status').className='status error';$('status').textContent=`Could not analyze ${t}: ${err.message}`;$('status').style.display='block'}
+  }catch(err){if(preserveReport){$('status').style.display='none';$('priceContext').textContent='Current report retained';showToast(`Could not load ${t}. Current report retained.`)}else{document.body.classList.remove('has-results');$('status').className='status error';$('status').textContent=`Could not analyze ${t}: ${err.message}`;$('status').style.display='block'}}
 }
 $('landingForm').addEventListener('submit',e=>{e.preventDefault();run($('landingTicker').value)});
 $('appForm').addEventListener('submit',e=>{e.preventDefault();run($('appTicker').value)});
 document.querySelectorAll('[data-t]').forEach(b=>b.addEventListener('click',()=>run(b.dataset.t)));
+$('recentList').addEventListener('click',e=>{let button=e.target.closest('[data-recent]');if(!button)return;document.querySelectorAll('[data-recent]').forEach(item=>{let active=item===button;item.classList.toggle('active',active);item.setAttribute('aria-current',active?'page':'false')});run(button.dataset.recent,true)});
 document.querySelectorAll('[data-focus-search]').forEach(b=>b.addEventListener('click',()=>{$('landingTicker').focus();$('landingTicker').scrollIntoView({behavior:'smooth',block:'center'})}));
 $('newAnalysis').addEventListener('click',()=>{document.body.classList.remove('has-results');history.replaceState(null,'','/');setTimeout(()=>$('landingTicker').focus(),50)});
 $('shareButton').addEventListener('click',shareAnalysis);$('shareSide').addEventListener('click',shareAnalysis);
