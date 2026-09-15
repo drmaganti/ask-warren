@@ -63,6 +63,8 @@ def test_analyze_page_is_served():
     assert "What Could Change Warren's View" in response.text
     assert "Evidence Quality" in response.text
     assert "Evidence confidence" in response.text
+    assert "Why this confidence level" in response.text
+    assert "confidence_score" in response.text
     assert "confMap={high:82,medium:68,low:45}" not in response.text
     assert "recentList').addEventListener('click'" in response.text
     assert "Current report retained" in response.text

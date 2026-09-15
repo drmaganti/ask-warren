@@ -315,6 +315,9 @@ class DeepAnalysis(BaseModel):
     what_would_change_view: list[str]
     verdict: str
     confidence: Literal["low", "medium", "high"]
+    confidence_score: int | None = Field(default=None, ge=0, le=100)
+    confidence_reasons: list[str] = Field(default_factory=list)
+    confidence_gaps: list[str] = Field(default_factory=list)
     citations: list[AnalysisCitation] = Field(default_factory=list)
     bull_insights: list[InvestmentInsight] = Field(default_factory=list)
     bear_insights: list[InvestmentInsight] = Field(default_factory=list)

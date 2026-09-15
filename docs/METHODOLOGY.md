@@ -114,9 +114,7 @@ Technical context should not turn a weak business into a high-quality investment
 
 Warren does not invent missing financial metrics.
 
-Category averages use available components. If no component is available, the current neutral fallback is 50. Deep mode receives the list of missing metrics plus evidence-source availability and is instructed to reduce confidence when evidence is insufficient.
-
-Future methodology versions should make data coverage a first-class confidence input rather than allowing a neutral fallback to appear equally trustworthy as a fully observed score.
+Category averages use available components. If no component is available, the current neutral fallback is 50. Deep mode separately measures the completeness of important financial inputs as part of verdict confidence, so a neutral fallback is not treated as equally trustworthy as a fully observed score.
 
 ---
 
@@ -219,6 +217,20 @@ Every verdict should include a separate confidence level:
 - **Low** — important inputs are missing, stale or contradictory.
 
 Confidence is not a measure of expected return. It measures confidence in the quality of the current research conclusion.
+
+Warren calculates a company-specific evidence-confidence score after validating every citation. The score weights:
+
+```text
+Coverage of key investment points  30%
+Source authority and retrieval depth 25%
+Independent corroboration           20%
+Evidence freshness                  15%
+Critical financial-data completeness 10%
+```
+
+The key investment points are the thesis plus the leading Bull and Bear insights shown to the user. A point counts as supported only when it cites a claim that exists in the retrieved evidence packet. Primary or structured evidence earns more weight than metadata or headlines, and claims confirmed by multiple independent sources earn more weight than single-source claims. Unresolved duration or time horizon reduces confidence.
+
+Scores of 80–100 are High confidence, 60–79 are Medium and below 60 are Low. The interface exposes concise reasons and the most important evidence gaps. Confidence is recalculated on every report, including when cached narrative analysis is reused.
 
 ### What would change the view?
 

@@ -4,6 +4,7 @@ import asyncio
 
 from .models import DeepAnalysis, DeepResponse, DcfResult, EvidenceBundle, MetricSnapshot, ScreenRequest, ScreenResponse, ScreenResult, SourceStatus
 from .dcf import calculate_dcf
+from .confidence import assess_analysis_confidence
 from .protocols import DeepAnalysisProvider, EvidenceProvider, MarketDataProvider
 from .scoring import score_metrics
 
@@ -163,6 +164,7 @@ class Warren:
         analysis, model = await self.deep_analysis.analyze(metrics, scores, evidence)
         analysis = validate_analysis_citations(analysis, evidence)
         analysis = reconcile_analysis_with_dcf(analysis, dcf)
+        analysis = assess_analysis_confidence(analysis, evidence, metrics)
         return DeepResponse(
             ticker=metrics.ticker,
             metrics=metrics,
