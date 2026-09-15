@@ -227,7 +227,7 @@ class EvidenceReference(BaseModel):
 
 class EvidenceClaim(BaseModel):
     id: str
-    category: Literal["filing", "sec_fact", "news", "estimate_revision", "earnings", "earnings_call", "technical", "insider", "macro", "web"]
+    category: Literal["metric", "filing", "sec_fact", "news", "estimate_revision", "earnings", "earnings_call", "technical", "insider", "macro", "web"]
     claim: str
     as_of: date | datetime | None = None
     authority_tier: Literal[1, 2, 3, 4, 5]

@@ -187,6 +187,19 @@ def test_evidence_router_normalizes_and_deduplicates_claims():
     assert router_meta["evidence_version"] == bundle.evidence_version
 
 
+def test_evidence_router_exposes_structured_company_metrics_as_claims():
+    provider = EvidenceRouter(GoodProvider())
+    bundle = provider.fetch_evidence(
+        "AAPL",
+        MetricSnapshot(ticker="AAPL", revenue_growth=.12, free_cash_flow=100_000_000),
+    )
+
+    metric_claims = [claim for claim in bundle.claims if claim.category == "metric"]
+    assert {claim.metadata["field"] for claim in metric_claims} == {"revenue_growth", "free_cash_flow"}
+    assert all(claim.retrieval_depth == "structured" for claim in metric_claims)
+    assert all(claim.references[0].source == "Yahoo Finance" for claim in metric_claims)
+
+
 def test_exa_without_key_degrades_to_unavailable(monkeypatch):
     monkeypatch.delenv("EXA_API_KEY", raising=False)
     provider = ExaWebEvidenceProvider(api_key=None)

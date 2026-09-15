@@ -388,6 +388,14 @@ class DeterministicDeepAnalysisProvider:
     ) -> tuple[list[InvestmentInsight], list[InvestmentInsight]]:
         bull: list[InvestmentInsight] = []
         bear: list[InvestmentInsight] = []
+        metric_claims = {
+            claim.metadata.get("field"): claim.id
+            for claim in evidence.claims
+            if claim.category == "metric" and claim.metadata.get("field")
+        }
+
+        def support(*fields: str) -> list[str]:
+            return [metric_claims[field] for field in fields if field in metric_claims]
 
         if forward_support:
             text, claim_id = forward_support[0]
@@ -434,6 +442,7 @@ class DeterministicDeepAnalysisProvider:
                 likelihood="medium",
                 impact="medium",
                 confidence="medium",
+                claim_ids=support("quarterly_comparisons.quarterly_operating_margin"),
             ))
 
         if forward_caution:
@@ -488,6 +497,7 @@ class DeterministicDeepAnalysisProvider:
                 likelihood="high",
                 impact="high",
                 confidence="medium" if bridge.get("status") == "available" else "low",
+                claim_ids=support("revenue_growth", "earnings_growth"),
             ))
 
         if metrics.trailing_pe is not None and metrics.trailing_pe >= 35:
@@ -506,6 +516,7 @@ class DeterministicDeepAnalysisProvider:
                 likelihood="medium",
                 impact="high",
                 confidence="high",
+                claim_ids=support("trailing_pe", "forward_pe"),
             ))
 
         if evidence.technical:
@@ -550,6 +561,7 @@ class DeterministicDeepAnalysisProvider:
                     likelihood="medium",
                     impact="medium",
                     confidence="high",
+                    claim_ids=[claim.id for claim in evidence.claims if claim.category == "technical"][:1],
                 ))
             weakening = (
                 technical.close is not None
@@ -580,6 +592,7 @@ class DeterministicDeepAnalysisProvider:
                     likelihood="medium",
                     impact="medium",
                     confidence="high",
+                    claim_ids=[claim.id for claim in evidence.claims if claim.category == "technical"][:1],
                 ))
 
         if metrics.free_cash_flow is not None and metrics.free_cash_flow > 0:
@@ -595,6 +608,7 @@ class DeterministicDeepAnalysisProvider:
                 scenario_path="The Bull path requires cash to fund profitable reinvestment, debt reduction or disciplined shareholder returns rather than low-return spending.",
                 what_to_watch=["Free cash flow across subsequent quarters", "Working capital", "Capital expenditure", "Net debt"],
                 confidence="medium",
+                claim_ids=support("free_cash_flow"),
             ))
 
         if metrics.revenue_growth is not None and metrics.revenue_growth >= 0.05:
@@ -609,6 +623,7 @@ class DeterministicDeepAnalysisProvider:
                 scenario_path="The Bull path requires sales growth to persist while margins and cash conversion remain stable.",
                 what_to_watch=["Customer traffic, transactions or units", "Revenue-estimate revisions", "Pricing versus volume"],
                 likelihood="medium", impact="high", confidence="medium",
+                claim_ids=support("revenue_growth"),
             ))
 
         if metrics.return_on_assets is not None and metrics.return_on_assets >= 0.07:
@@ -623,6 +638,7 @@ class DeterministicDeepAnalysisProvider:
                 scenario_path="The advantage strengthens if returns remain stable as the asset base grows; it weakens if expansion requires progressively more capital.",
                 what_to_watch=["Return on assets", "Capital expenditure", "Revenue generated per dollar of assets"],
                 likelihood="medium", impact="medium", confidence="medium",
+                claim_ids=support("return_on_assets"),
             ))
 
         if metrics.total_cash is not None and metrics.total_debt is not None and metrics.total_cash >= metrics.total_debt:
@@ -637,6 +653,7 @@ class DeterministicDeepAnalysisProvider:
                 scenario_path="The cushion remains valuable if operating cash flow replenishes spending and distributions.",
                 what_to_watch=["Net cash or net debt", "Operating cash flow", "Acquisition and buyback spending"],
                 likelihood="medium", impact="medium", confidence="high",
+                claim_ids=support("total_cash", "total_debt"),
             ))
 
         fcf_yield = metrics.free_cash_flow / metrics.market_cap if metrics.free_cash_flow is not None and metrics.market_cap not in (None, 0) else None
@@ -652,6 +669,7 @@ class DeterministicDeepAnalysisProvider:
                 scenario_path="The concern fades if cash flow compounds rapidly; it worsens if cash generation stalls while the valuation remains elevated.",
                 what_to_watch=["Free-cash-flow growth", "Free-cash-flow margin", "Market value relative to cash flow"],
                 likelihood="medium", impact="high", confidence="high",
+                claim_ids=support("free_cash_flow", "market_cap"),
             ))
 
         if metrics.profit_margin is not None and metrics.profit_margin < 0.05:
@@ -666,6 +684,7 @@ class DeterministicDeepAnalysisProvider:
                 scenario_path="The risk recedes if pricing power and productivity expand margins without weakening customer demand.",
                 what_to_watch=["Gross margin", "Operating expenses as a share of sales", "Pricing versus customer volume"],
                 likelihood="medium", impact="medium", confidence="high",
+                claim_ids=support("profit_margin"),
             ))
 
         quarterly_fcf = next((x for x in metrics.quarterly_comparisons if x.metric == "quarterly_free_cash_flow"), None)
@@ -682,6 +701,7 @@ class DeterministicDeepAnalysisProvider:
                 scenario_path="The concern fades if cash conversion recovers; it strengthens if working capital or investment needs continue absorbing a larger share of operating cash.",
                 what_to_watch=["Free-cash-flow conversion", "Working-capital use", "Capital expenditure relative to operating cash flow"],
                 likelihood="medium", impact="medium", confidence="high",
+                claim_ids=support("quarterly_comparisons.quarterly_free_cash_flow"),
             ))
 
         capex = next((x for x in metrics.quarterly_comparisons if x.metric == "quarterly_capital_expenditure"), None)
@@ -698,6 +718,7 @@ class DeterministicDeepAnalysisProvider:
                 scenario_path="The spending becomes constructive if returns and demand rise; it becomes a drag if expansion outpaces profitable demand.",
                 what_to_watch=["Capital expenditure", "New capacity utilization", "Return on assets", "Free-cash-flow conversion"],
                 likelihood="medium", impact="medium", confidence="high",
+                claim_ids=support("quarterly_comparisons.quarterly_capital_expenditure"),
             ))
 
         if metrics.price is not None and metrics.analyst_target_median is not None and metrics.analyst_target_median < metrics.price:
@@ -713,6 +734,7 @@ class DeterministicDeepAnalysisProvider:
                 scenario_path="The concern fades if analysts raise targets because earnings expectations improve, not merely because valuation multiples expand.",
                 what_to_watch=["Median analyst price target", "Target changes after new business evidence", "Forward earnings revisions"],
                 likelihood="medium", impact="medium", confidence="medium",
+                claim_ids=support("analyst_target_median", "price"),
             ))
 
         return cls._rank_insights(bull), cls._rank_insights(bear)

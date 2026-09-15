@@ -34,14 +34,14 @@ class EvidenceRouter:
     Bull, Bear, Risk and Final analysis.
     """
 
-    VERSION = "1.4"
+    VERSION = "1.5"
 
     def __init__(self, upstream: EvidenceProvider):
         self.upstream = upstream
 
     def fetch_evidence(self, ticker: str, metrics: MetricSnapshot) -> EvidenceBundle:
         bundle = self.upstream.fetch_evidence(ticker, metrics)
-        claims, duplicate_count = normalize_claims(bundle)
+        claims, duplicate_count = normalize_claims(bundle, metrics)
         bundle.claims = claims
         bundle.collected_at = datetime.now(timezone.utc)
         fingerprint_payload = [claim.model_dump(mode="json") for claim in claims]
@@ -161,6 +161,47 @@ def _filing_claim(item: FilingEvidence) -> EvidenceClaim:
             "content_retrieved": False,
         },
     )
+
+
+def _metric_claims(metrics: MetricSnapshot) -> list[EvidenceClaim]:
+    fields = (
+        "price", "market_cap", "total_revenue", "trailing_pe", "forward_pe",
+        "free_cash_flow", "total_cash", "total_debt", "revenue_growth",
+        "earnings_growth", "operating_margin", "profit_margin",
+        "return_on_equity", "return_on_assets", "debt_to_equity",
+        "current_ratio", "analyst_target_median",
+    )
+    claims: list[EvidenceClaim] = []
+    for field in fields:
+        value = getattr(metrics, field)
+        if value is None:
+            continue
+        label = field.replace("_", " ")
+        claims.append(EvidenceClaim(
+            id=_stable_id("metric", field),
+            category="metric",
+            claim=f"Yahoo Finance structured company data reports {label} of {value:g}.",
+            as_of=metrics.fetched_at or metrics.most_recent_quarter,
+            authority_tier=2,
+            retrieval_depth="structured",
+            confidence="high",
+            references=[_reference("Yahoo Finance", authority_tier=2, retrieval_depth="structured")],
+            metadata={"field": field, "value": value},
+        ))
+    for item in metrics.quarterly_comparisons:
+        field = f"quarterly_comparisons.{item.metric}"
+        claims.append(EvidenceClaim(
+            id=_stable_id("metric", field),
+            category="metric",
+            claim=f"Yahoo Finance statement data reports {item.label} of {item.current:g} for the current period.",
+            as_of=item.current_period or metrics.fetched_at,
+            authority_tier=2,
+            retrieval_depth="structured",
+            confidence="high",
+            references=[_reference("Yahoo Finance", authority_tier=2, retrieval_depth="structured")],
+            metadata={"field": field, **item.model_dump(exclude_none=True, mode="json")},
+        ))
+    return claims
 
 
 def _sec_fact_claim(item: SecFactEvidence) -> EvidenceClaim:
@@ -384,8 +425,8 @@ def _macro_claim(item: MacroEvidence) -> EvidenceClaim:
     )
 
 
-def normalize_claims(bundle: EvidenceBundle) -> tuple[list[EvidenceClaim], int]:
-    claims: list[EvidenceClaim] = []
+def normalize_claims(bundle: EvidenceBundle, metrics: MetricSnapshot | None = None) -> tuple[list[EvidenceClaim], int]:
+    claims: list[EvidenceClaim] = _metric_claims(metrics) if metrics is not None else []
     claims.extend(_filing_claim(item) for item in bundle.filings)
     claims.extend(_sec_fact_claim(item) for item in bundle.sec_facts)
     claims.extend(_estimate_claim(item) for item in bundle.estimate_revisions)
