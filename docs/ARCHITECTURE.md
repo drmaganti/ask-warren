@@ -167,7 +167,7 @@ Warren -> a specific UI
 - Per-key request coalescing prevents simultaneous requests for the same ticker or global macro bundle from duplicating upstream work.
 - Gemini results are content-addressed from the exact semantic packet sent to the model. Retrieval timestamps are excluded, so refreshing identical facts reuses the saved synthesis; any changed metric, selected claim, source status, evidence content, model or packet version creates a new key.
 - Successful model syntheses persist for up to 30 days. Superseded entries are unreachable as soon as inputs change and Redis deletes them automatically at expiry, limiting retained storage.
-- A deterministic fallback caused by a transient Gemini failure is returned safely but not stored in the synthesis cache.
+- A deterministic fallback caused by a transient Gemini failure is cached for 15 minutes. This prevents repeated paid-provider retries during an outage while allowing Gemini to recover automatically; successful Gemini syntheses use the longer semantic cache.
 
 ## Freshness model (target)
 

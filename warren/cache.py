@@ -214,6 +214,12 @@ class CachedDeepAnalysisProvider:
             lambda value: {"analysis": _model_encoder(value[0]), "model": value[1]},
             lambda value: (DeepAnalysis.model_validate(value["analysis"]), value.get("model")),
         )
+        self.fallback_cache: PersistentTTLCache[tuple[DeepAnalysis, str | None]] = PersistentTTLCache(
+            "analysis-v13-semantic-fallback",
+            min(ttl_seconds, 900),
+            lambda value: {"analysis": _model_encoder(value[0]), "model": value[1]},
+            lambda value: (DeepAnalysis.model_validate(value["analysis"]), value.get("model")),
+        )
         self._locks: dict[str, asyncio.Lock] = {}
 
     def _key(self, metrics: MetricSnapshot, scores: CategoryScores, evidence: EvidenceBundle) -> str:
@@ -237,15 +243,22 @@ class CachedDeepAnalysisProvider:
         cached = self.cache.get(key)
         if cached is not None:
             return cached
+        cached = self.fallback_cache.get(key)
+        if cached is not None:
+            return cached
         lock = self._locks.setdefault(key, asyncio.Lock())
         async with lock:
             cached = self.cache.get(key)
             if cached is not None:
                 return cached
+            cached = self.fallback_cache.get(key)
+            if cached is not None:
+                return cached
             value = await self.upstream.analyze(metrics, scores, evidence)
-            # A resilient provider can return its deterministic fallback after a
-            # transient model error. Do not preserve that degraded result for the
-            # full synthesis TTL; the next request should be allowed to retry.
-            if not (value[1] or "").startswith("deterministic"):
+            # During a transient model outage, reuse the deterministic result for
+            # 15 minutes instead of retrying the paid provider on every click.
+            if (value[1] or "").startswith("deterministic"):
+                self.fallback_cache.set(key, value)
+            else:
                 self.cache.set(key, value)
             return value

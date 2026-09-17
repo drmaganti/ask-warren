@@ -149,7 +149,7 @@ async def test_deep_cache_ignores_refresh_timestamps_but_not_changed_facts():
 
 
 @pytest.mark.asyncio
-async def test_deep_cache_does_not_preserve_degraded_fallback():
+async def test_deep_cache_briefly_reuses_degraded_fallback():
     upstream = FallbackDeep()
     cached = CachedDeepAnalysisProvider(upstream, ttl_seconds=60)
     metrics = MetricSnapshot(ticker="AAPL", price=100)
@@ -167,7 +167,7 @@ async def test_deep_cache_does_not_preserve_degraded_fallback():
     await cached.analyze(metrics, scores, evidence)
     await cached.analyze(metrics, scores, evidence)
 
-    assert upstream.calls == 2
+    assert upstream.calls == 1
 
 
 def test_persistent_cache_survives_a_new_application_instance():
