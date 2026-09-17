@@ -19,6 +19,7 @@ class ExaWebEvidenceProvider:
     """
 
     SEARCH_URL = "https://api.exa.ai/search"
+    cache_namespace = "exa-web-v2-targeted-lenses"
 
     def __init__(
         self,
