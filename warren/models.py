@@ -239,6 +239,25 @@ class EvidenceClaim(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
+class MaterialDevelopment(BaseModel):
+    """A news or web event ranked by its potential investment significance."""
+
+    id: str
+    title: str
+    summary: str | None = None
+    investor_implication: str
+    stance: Literal["bullish", "bearish", "mixed"] = "mixed"
+    published_at: datetime | None = None
+    materiality_score: int = Field(ge=0, le=100)
+    materiality_level: Literal["critical", "material", "relevant", "background"]
+    time_horizon: Literal["near_term", "medium_term", "long_term", "unresolved"] = "unresolved"
+    themes: list[str] = Field(default_factory=list)
+    score_breakdown: dict[str, int] = Field(default_factory=dict)
+    claim_ids: list[str] = Field(default_factory=list)
+    references: list[EvidenceReference] = Field(default_factory=list)
+    independent_source_count: int = 1
+
+
 class EvidenceBundle(BaseModel):
     collected_at: datetime | None = None
     evidence_version: str | None = None
@@ -253,6 +272,7 @@ class EvidenceBundle(BaseModel):
     insider_transactions: list[InsiderTransactionEvidence] = Field(default_factory=list)
     macro: list[MacroEvidence] = Field(default_factory=list)
     claims: list[EvidenceClaim] = Field(default_factory=list)
+    material_developments: list[MaterialDevelopment] = Field(default_factory=list)
     source_status: list[SourceStatus] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict)
 
@@ -270,6 +290,7 @@ class EvidenceBundle(BaseModel):
             insider_transactions=[*self.insider_transactions, *other.insider_transactions],
             macro=[*self.macro, *other.macro],
             claims=[*self.claims, *other.claims],
+            material_developments=[*self.material_developments, *other.material_developments],
             source_status=[*self.source_status, *other.source_status],
             metadata={**self.metadata, **other.metadata},
         )

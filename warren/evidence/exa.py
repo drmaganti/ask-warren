@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import math
 from datetime import datetime
 from typing import Any
 
@@ -42,13 +43,14 @@ class ExaWebEvidenceProvider:
             return None
 
     @staticmethod
-    def _query(ticker: str, metrics: MetricSnapshot) -> str:
+    def _queries(ticker: str, metrics: MetricSnapshot) -> list[str]:
         company = metrics.company_name or ticker
-        return (
-            f"Latest material developments for {company} ({ticker}) relevant to an investor: "
-            "earnings and guidance, investor relations updates, major product or strategy changes, "
-            "regulation or litigation, competition, and industry demand."
-        )
+        prefix = f"Latest material developments for {company} ({ticker}) relevant to an investor"
+        return [
+            f"{prefix}: future customer demand, bookings, backlog, market share, major products and growth catalysts.",
+            f"{prefix}: earnings guidance, analyst expectations, margins, capital spending, pricing and cash flow.",
+            f"{prefix}: competition, regulation, litigation, investigations, technology disruption and structural risks.",
+        ]
 
     def fetch_evidence(self, ticker: str, metrics: MetricSnapshot) -> EvidenceBundle:
         bundle = EvidenceBundle()
@@ -62,66 +64,75 @@ class ExaWebEvidenceProvider:
             )
             return bundle
 
-        query = self._query(ticker.strip().upper(), metrics)
-        body = {
-            "query": query,
-            "type": "auto",
-            "numResults": self.num_results,
-            "userLocation": "US",
-            "moderation": True,
-            "contents": {"highlights": True},
-            "systemPrompt": (
-                "Prefer official company investor-relations pages, SEC/government sources and reputable "
-                "financial journalism. Avoid duplicate or syndicated coverage when possible."
-            ),
-        }
+        queries = self._queries(ticker.strip().upper(), metrics)
         headers = {
             "x-api-key": self.api_key,
             "Content-Type": "application/json",
         }
 
-        with httpx.Client(timeout=self.timeout, follow_redirects=True) as client:
-            response = client.post(self.SEARCH_URL, headers=headers, json=body)
-            response.raise_for_status()
-            payload = response.json()
-
         seen_urls: set[str] = set()
-        for result in payload.get("results") or []:
-            url = str(result.get("url") or "").strip()
-            title = str(result.get("title") or "").strip()
-            if not url or not title or url in seen_urls:
-                continue
-            seen_urls.add(url)
-            highlights = []
-            for value in result.get("highlights") or []:
-                text = str(value).strip()
-                if not text:
+        costs: list[float] = []
+        request_ids: list[str] = []
+        # Keep the total result budget close to the original single-search budget.
+        per_query = max(1, math.ceil(self.num_results / len(queries)))
+        failures: list[str] = []
+        with httpx.Client(timeout=self.timeout, follow_redirects=True) as client:
+            for query in queries:
+                body = {
+                    "query": query,
+                    "type": "auto",
+                    "numResults": per_query,
+                    "userLocation": "US",
+                    "moderation": True,
+                    "contents": {"highlights": True},
+                    "systemPrompt": (
+                        "Prefer official company investor-relations pages, SEC/government sources and reputable "
+                        "financial journalism. Prefer recent original reporting and avoid duplicate or syndicated coverage."
+                    ),
+                }
+                try:
+                    response = client.post(self.SEARCH_URL, headers=headers, json=body)
+                    response.raise_for_status()
+                    payload = response.json()
+                except (httpx.HTTPError, ValueError) as exc:
+                    failures.append(type(exc).__name__)
                     continue
-                highlights.append(text[: self.highlight_characters])
-                if len(highlights) >= 3:
-                    break
-            bundle.web.append(
-                WebEvidence(
-                    title=title,
-                    url=url,
-                    published_at=self._published_at(result.get("publishedDate")),
-                    author=str(result.get("author")).strip() if result.get("author") else None,
-                    highlights=highlights,
-                    query=query,
-                )
-            )
+                cost = ((payload.get("costDollars") or {}).get("total"))
+                if isinstance(cost, (int, float)):
+                    costs.append(float(cost))
+                if payload.get("requestId"):
+                    request_ids.append(str(payload["requestId"]))
+                for result in payload.get("results") or []:
+                    url = str(result.get("url") or "").strip()
+                    title = str(result.get("title") or "").strip()
+                    if not url or not title or url in seen_urls:
+                        continue
+                    seen_urls.add(url)
+                    highlights = [str(value).strip()[: self.highlight_characters] for value in result.get("highlights") or [] if str(value).strip()][:3]
+                    bundle.web.append(WebEvidence(
+                        title=title,
+                        url=url,
+                        published_at=self._published_at(result.get("publishedDate")),
+                        author=str(result.get("author")).strip() if result.get("author") else None,
+                        highlights=highlights,
+                        query=query,
+                    ))
 
-        cost = ((payload.get("costDollars") or {}).get("total"))
-        if isinstance(cost, (int, float)):
-            bundle.metadata["exa_cost_dollars"] = float(cost)
-        if payload.get("requestId"):
-            bundle.metadata["exa_request_id"] = str(payload["requestId"])
+        if costs:
+            bundle.metadata["exa_cost_dollars"] = sum(costs)
+        if request_ids:
+            bundle.metadata["exa_request_ids"] = request_ids
+        bundle.metadata["exa_query_count"] = len(queries)
+        bundle.metadata["exa_failed_query_count"] = len(failures)
 
         bundle.source_status.append(
             SourceStatus(
                 source="Exa web discovery",
-                status="ok" if bundle.web else "partial",
-                detail=f"{len(bundle.web)} web results with query-relevant excerpts returned",
+                status="ok" if bundle.web and not failures else "partial",
+                detail=(
+                    f"{len(bundle.web)} web results returned across {len(queries) - len(failures)} of "
+                    f"{len(queries)} investor-focused searches"
+                ),
             )
         )
         return bundle

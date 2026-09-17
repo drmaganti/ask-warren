@@ -21,7 +21,7 @@ from warren.models import (
     TechnicalEvidence,
     WebEvidence,
 )
-from warren.evidence.router import _themes
+from warren.evidence.router import _themes, rank_material_developments
 
 
 class GoodProvider:
@@ -198,6 +198,22 @@ def test_evidence_router_exposes_structured_company_metrics_as_claims():
     assert {claim.metadata["field"] for claim in metric_claims} == {"revenue_growth", "free_cash_flow"}
     assert all(claim.retrieval_depth == "structured" for claim in metric_claims)
     assert all(claim.references[0].source == "Yahoo Finance" for claim in metric_claims)
+
+
+def test_material_developments_rank_forward_excerpts_and_deduplicate_events():
+    bundle = EvidenceRouter(DuplicateNewsProvider()).fetch_evidence(
+        "AAPL", MetricSnapshot(ticker="AAPL", company_name="Apple Inc.")
+    )
+
+    developments = bundle.material_developments
+    assert developments
+    assert developments == sorted(developments, key=lambda item: item.materiality_score, reverse=True)
+    assert all(0 <= item.materiality_score <= 100 for item in developments)
+    web_event = next(item for item in developments if "investor update" in item.title.lower())
+    assert web_event.materiality_score >= 40
+    assert web_event.independent_source_count == 1
+    assert web_event.score_breakdown["forward_relevance"] > 0
+    assert web_event.references[0].url == "https://investor.example.com/update"
 
 
 def test_exa_without_key_degrades_to_unavailable(monkeypatch):

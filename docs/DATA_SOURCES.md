@@ -59,6 +59,10 @@ Important limitations:
 - News evidence is headline-level only; full article text is not retrieved by this provider.
 - Estimate history must not be treated as point-in-time historical data for backtests unless it was actually captured at that historical time.
 
+## Exa web discovery
+
+When `EXA_API_KEY` is configured, Ask Warren runs three focused searches per ticker for demand and catalysts, expectations and capital deployment, and structural risks. Exa returns query-relevant excerpts rather than guaranteed full article text. Results are cached for two hours, deduplicated, ranked for investment materiality and shown only when they meet the relevance threshold. Search excerpts must not be represented as complete articles.
+
 ## FRED
 
 This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis. Use of FRED data is subject to the [FRED API Terms of Use](https://fred.stlouisfed.org/docs/api/terms_of_use.html).

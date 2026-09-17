@@ -4,7 +4,7 @@ import hashlib
 import json
 import re
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from urllib.parse import urlsplit, urlunsplit
 
 from ..models import (
@@ -17,6 +17,7 @@ from ..models import (
     FilingEvidence,
     InsiderTransactionEvidence,
     MacroEvidence,
+    MaterialDevelopment,
     MetricSnapshot,
     NewsEvidence,
     SecFactEvidence,
@@ -34,7 +35,7 @@ class EvidenceRouter:
     Bull, Bear, Risk and Final analysis.
     """
 
-    VERSION = "1.5"
+    VERSION = "1.6"
 
     def __init__(self, upstream: EvidenceProvider):
         self.upstream = upstream
@@ -43,6 +44,7 @@ class EvidenceRouter:
         bundle = self.upstream.fetch_evidence(ticker, metrics)
         claims, duplicate_count = normalize_claims(bundle, metrics)
         bundle.claims = claims
+        bundle.material_developments = rank_material_developments(claims, metrics)
         bundle.collected_at = datetime.now(timezone.utc)
         fingerprint_payload = [claim.model_dump(mode="json") for claim in claims]
         bundle.evidence_version = hashlib.sha256(
@@ -54,6 +56,7 @@ class EvidenceRouter:
             "normalized_claims": len(claims),
             "deduplicated_items": duplicate_count,
             "claim_categories": sorted({claim.category for claim in claims}),
+            "material_developments": len(bundle.material_developments),
             "collected_at": bundle.collected_at.isoformat(),
             "evidence_version": bundle.evidence_version,
         }
@@ -92,6 +95,101 @@ def _canonical_url(url: str | None) -> str | None:
 
 def _normalize_text(value: str) -> str:
     return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9]+", " ", value.lower())).strip()
+
+
+_POSITIVE_TERMS = ("raises", "raised", "growth", "accelerates", "expands", "wins", "strong demand", "record", "approval")
+_NEGATIVE_TERMS = ("cuts", "lowered", "decline", "slows", "weak", "lawsuit", "investigation", "antitrust", "recall", "loses")
+
+
+def _token_set(value: str) -> set[str]:
+    ignored = {"the", "a", "an", "and", "or", "for", "to", "of", "in", "on", "with", "company", "latest"}
+    return {token for token in _normalize_text(value).split() if len(token) > 2 and token not in ignored}
+
+
+def _similar_event(left: EvidenceClaim, right: EvidenceClaim) -> bool:
+    a, b = _token_set(str(left.metadata.get("title") or left.claim)), _token_set(str(right.metadata.get("title") or right.claim))
+    return bool(a and b) and len(a & b) / len(a | b) >= .45
+
+
+def _event_implication(themes: list[str], stance: str) -> str:
+    if "legal_regulatory" in themes:
+        return "This could change costs, operating freedom or the timing of growth; the financial exposure and case milestones determine whether it becomes material."
+    if "demand" in themes or "forecast" in themes:
+        return "This is a forward demand signal that can change future revenue expectations; confirmation should come through guidance, orders, usage or customer growth."
+    if "investment_capacity" in themes:
+        return "The investment can expand future capacity, but returns depend on demand growing enough to cover higher capital and operating costs."
+    if "competition" in themes:
+        return "This may affect market share, pricing power and the growth assumptions investors currently expect."
+    if "earnings_quality" in themes or "pricing_mix" in themes:
+        return "This may change margins and cash conversion, so investors should separate durable operating improvement from temporary effects."
+    return "This development could affect the investment thesis, but its financial magnitude needs confirmation in company results or guidance."
+
+
+def _event_score(claim: EvidenceClaim, metrics: MetricSnapshot | None, now: datetime) -> tuple[int, dict[str, int], str, str]:
+    text = f"{claim.metadata.get('title', '')} {claim.claim}".lower()
+    themes = claim.metadata.get("themes") or _themes(text)
+    financial = min(25, 7 + 5 * len(set(themes) & {"demand", "forecast", "pricing_mix", "earnings_quality", "capital_allocation"}))
+    forward = min(20, 5 + 7 * len(set(themes) & {"demand", "forecast", "investment_capacity", "competition", "legal_regulatory"}))
+    thesis = min(15, 4 + 4 * min(3, len(themes)))
+    host = (urlsplit(claim.references[0].url or "").hostname or "").lower() if claim.references else ""
+    company_token = _normalize_text(metrics.company_name or "").split()[0] if metrics and metrics.company_name else ""
+    official = host.endswith(".gov") or (company_token and company_token in host)
+    quality = 15 if official else 11 if claim.retrieval_depth in {"excerpt", "full_text"} else 5
+    quantified = bool(re.search(r"(?:\$|%|\b\d+(?:\.\d+)?\s*(?:billion|million|bn|m)\b)", text))
+    magnitude = min(10, 4 + (3 if quantified else 0) + (3 if any(x in text for x in ("major", "material", "companywide", "global", "billion")) else 0))
+    surprise = min(10, 2 + (5 if any(x in text for x in ("raises", "cuts", "beats", "misses", "unexpected", "surprise", "lowered")) else 0))
+    as_of = claim.as_of.date() if isinstance(claim.as_of, datetime) else claim.as_of
+    age = (now.date() - as_of).days if isinstance(as_of, date) else None
+    immediacy = 5 if age is not None and age <= 30 else 3 if age is not None and age <= 90 else 1
+    breakdown = {"financial_impact": financial, "forward_relevance": forward, "thesis_impact": thesis, "evidence_quality": quality, "magnitude_scope": magnitude, "expectation_surprise": surprise, "immediacy": immediacy}
+    score = min(100, sum(breakdown.values()) + min(5, max(0, claim.independent_source_count - 1) * 3))
+    positive, negative = any(x in text for x in _POSITIVE_TERMS), any(x in text for x in _NEGATIVE_TERMS)
+    stance = "mixed" if positive == negative else "bullish" if positive else "bearish"
+    horizon = "near_term" if age is not None and age <= 90 else "medium_term" if themes else "unresolved"
+    return score, breakdown, stance, horizon
+
+
+def rank_material_developments(claims: list[EvidenceClaim], metrics: MetricSnapshot | None = None) -> list[MaterialDevelopment]:
+    """Rank retrieved news/excerpts by explainable investment materiality."""
+    candidates = [claim for claim in claims if claim.category in {"news", "web"} and claim.metadata.get("retrieved_via") != "SEC EDGAR full-text retrieval"]
+    groups: list[list[EvidenceClaim]] = []
+    for claim in candidates:
+        match = next((group for group in groups if _similar_event(group[0], claim)), None)
+        if match is not None:
+            match.append(claim)
+        else:
+            groups.append([claim])
+    now = datetime.now(timezone.utc)
+    developments: list[MaterialDevelopment] = []
+    for group in groups:
+        primary = max(group, key=lambda item: (item.retrieval_depth in {"excerpt", "full_text"}, -item.authority_tier))
+        # Headline repetition is not independent corroboration. Count distinct
+        # domains only when the event group contains retrieved excerpts.
+        excerpt_claims = [claim for claim in group if claim.retrieval_depth in {"excerpt", "full_text"}]
+        independent = len({(urlsplit(ref.url).hostname or ref.source).lower() for claim in excerpt_claims for ref in claim.references if ref.url or ref.source}) or 1
+        primary = primary.model_copy(update={"independent_source_count": independent})
+        score, breakdown, stance, horizon = _event_score(primary, metrics, now)
+        themes = primary.metadata.get("themes") or _themes(primary.claim)
+        highlights = primary.metadata.get("highlights") or []
+        summary = str(highlights[0]).strip()[:320] if highlights else None
+        level = "critical" if score >= 80 else "material" if score >= 60 else "relevant" if score >= 40 else "background"
+        developments.append(MaterialDevelopment(
+            id=_stable_id("development", ":".join(sorted(claim.id for claim in group))),
+            title=str(primary.metadata.get("title") or primary.claim.removeprefix('Published headline: ').strip('"')),
+            summary=summary,
+            investor_implication=_event_implication(themes, stance),
+            stance=stance,
+            published_at=primary.as_of if isinstance(primary.as_of, datetime) else None,
+            materiality_score=score,
+            materiality_level=level,
+            time_horizon=horizon,
+            themes=themes,
+            score_breakdown=breakdown,
+            claim_ids=[claim.id for claim in group],
+            references=[ref for claim in group for ref in claim.references],
+            independent_source_count=independent,
+        ))
+    return sorted(developments, key=lambda item: (item.materiality_score, item.published_at or datetime.min.replace(tzinfo=timezone.utc)), reverse=True)
 
 
 _THEME_TERMS = {

@@ -208,6 +208,12 @@ body.has-results .siteHeader{display:none}
 .sourceRow strong{display:block}
 .sourceRow small{display:block;color:var(--muted);margin-top:3px}
 .sourceRow p{color:#c3d0ca;margin:8px 0 0}
+.development summary{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:start;cursor:pointer;list-style:none}
+.development summary::-webkit-details-marker{display:none}
+.developmentScore{min-width:38px;padding:4px 6px;border-radius:7px;background:#173a2b;color:#9fe0bd;font-size:11px;text-align:center}
+.developmentMeta{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.developmentTag{font-size:10px;border:1px solid var(--line);border-radius:999px;padding:3px 6px;color:var(--muted)}
+.developmentBody{padding:10px 0 2px 48px}
 .qualityRows{display:grid;gap:11px}
 .qualityRow{display:grid;grid-template-columns:1fr auto;gap:7px;font-size:12px}
 .qualityRow span{color:var(--muted)}
@@ -441,6 +447,13 @@ function evidenceExcerpt(item){
   if(text.length>560)text=text.slice(0,557)+'…';
   return `<div class="sourceRow"><strong>${item.url?`<a href="${esc(item.url)}" target="_blank" rel="noopener">${esc(item.title||'Supporting evidence')} ↗</a>`:esc(item.title||'Supporting evidence')}</strong>${item.published_at?`<small>${esc(String(item.published_at).slice(0,10))}</small>`:''}<p>${esc(text)}</p></div>`;
 }
+function developmentMarkup(items,news){
+  if(!(items||[]).length)return sourceRows((news||[]).slice(0,6),x=>`<div class="sourceRow"><strong>${x.url?`<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)} ↗</a>`:esc(x.title)}</strong><small>${esc([x.publisher,x.published_at?String(x.published_at).slice(0,10):'headline only'].filter(Boolean).join(' · '))}</small></div>`);
+  return items.filter(x=>Number(x.materiality_score)>=40).slice(0,5).map(x=>{
+    let refs=(x.references||[]),source=refs.find(r=>r.url),breakdown=Object.entries(x.score_breakdown||{}).map(([k,v])=>`${human(k.replaceAll('_',' '))}: ${v}`).join(' · ');
+    return `<details class="sourceRow development"><summary><span class="developmentScore">${esc(x.materiality_score)}</span><span><strong>${esc(x.title)}</strong><small>${esc([human(x.stance),human(x.materiality_level),x.published_at?String(x.published_at).slice(0,10):null].filter(Boolean).join(' · '))}</small></span><span class="muted">›</span></summary><div class="developmentBody">${x.summary?`<p>${esc(sentence(x.summary,2))}</p>`:''}<p><b>Why it matters:</b> ${esc(x.investor_implication)}</p><div class="developmentMeta">${(x.themes||[]).slice(0,4).map(t=>`<span class="developmentTag">${esc(human(t))}</span>`).join('')}</div>${breakdown?`<small>${esc(breakdown)}</small>`:''}${source?`<div class="sourcePills"><a class="sourcePill" href="${esc(source.url)}" target="_blank" rel="noopener">${esc(source.publisher||source.source||'Source')} ↗</a></div>`:''}</div></details>`;
+  }).join('')||'<div class="muted">No material recent development met the display threshold.</div>';
+}
 function sourceRows(list,mapper){return (list||[]).map(mapper).join('')||'<div class="muted">No data was available.</div>'}
 function activateTab(name,focus=true){
   document.querySelectorAll('.tab').forEach(t=>{let active=t.dataset.panel===name;t.setAttribute('aria-selected',String(active));t.tabIndex=active?0:-1});
@@ -498,7 +511,7 @@ function render(data){
 
   $('qualitySummary').innerHTML=qualityMarkup(statuses);
   $('claims').innerHTML=sourceRows((e.claims||[]).slice(0,12),c=>{let r=(c.references||[])[0]||{},url=sourceUrlForClaim(c,ticker);return `<div class="sourceRow"><strong>${url?`<a href="${esc(url)}" target="_blank" rel="noopener">${esc(c.claim||'Evidence item')} ↗</a>`:esc(c.claim||'Evidence item')}</strong><small>${esc(r.publisher||r.source||'Source')} · ${esc(human(c.confidence))} confidence</small></div>`});
-  $('news').innerHTML=sourceRows((e.news||[]).slice(0,6),x=>`<div class="sourceRow"><strong>${x.url?`<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)} ↗</a>`:esc(x.title)}</strong><small>${esc([x.publisher,x.published_at?String(x.published_at).slice(0,10):'headline only'].filter(Boolean).join(' · '))}</small></div>`);
+  $('news').innerHTML=developmentMarkup(e.material_developments,e.news);
   $('webEvidence').innerHTML=(e.web||[]).map(evidenceExcerpt).filter(Boolean).slice(0,8).join('')||'<div class="muted">No readable filing or research passages were available.</div>';
   $('earningsCall').innerHTML=sourceRows((e.earnings_call_qa||[]).slice(0,6),x=>`<div class="sourceRow"><strong>${esc(x.analyst||'Analyst question')} · ${esc(x.quarter||'Quarter')}</strong><p><b>Question:</b> ${esc(x.question)}</p><p><b>${esc(x.responder||'Management')}:</b> ${esc(x.answer)}</p>${x.source_url?`<small><a href="${esc(x.source_url)}" target="_blank" rel="noopener">Transcript provider ↗</a></small>`:''}</div>`);
   let statusLabel={ok:'Available',partial:'Partial',unavailable:'Unavailable',error:'Error'};$('sourceStatuses').innerHTML=statuses.map(x=>`<div class="sourceRow"><strong>${esc(x.source)}</strong><small>${esc(statusLabel[x.status]||human(x.status))}${x.detail?' · '+esc(x.detail):''}</small></div>`).join('')||'<div class="muted">Source status unavailable.</div>';

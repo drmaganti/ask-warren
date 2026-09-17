@@ -146,6 +146,26 @@ Warren distinguishes source authority from the depth actually retrieved:
 
 - SEC filing metadata proves that a filing/form/date exists; it does **not** prove the contents of that filing were read.
 - A Yahoo headline is headline-level evidence; Warren may not infer the unseen article body.
+
+### Material-development ranking
+
+Ask Warren converts recent news and retrieved web excerpts into deduplicated investment events before presenting them. Exa searches through three focused lenses: future demand and growth catalysts; expectations, margins and capital deployment; and competition, regulation, litigation and structural risks. Results are deduplicated by URL and event-title similarity so syndicated coverage does not receive artificial weight.
+
+Each event receives a deterministic, explainable materiality score out of 100:
+
+| Factor | Weight |
+|---|---:|
+| Potential financial impact | 25 |
+| Forward relevance | 20 |
+| Ability to change the investment thesis | 15 |
+| Evidence quality | 15 |
+| Magnitude and business scope | 10 |
+| Surprise relative to expectations | 10 |
+| Immediacy | 5 |
+
+Independent corroboration from separately retrieved excerpts can add up to five points, subject to the 100-point cap. Repeated headlines do not count as independent confirmation. Scores of 80–100 are **critical**, 60–79 **material**, 40–59 **relevant**, and below 40 **background**. Only relevant-or-higher developments are shown in the default Recent Developments view. The score ranks attention; it does not determine whether an event is bullish or bearish.
+
+Each displayed development includes the event, its investor implication, directional interpretation, time horizon, themes, scoring breakdown and clickable source. Headline-only evidence remains visibly limited and ranks below retrieved excerpts or authoritative original sources. Material developments also remain available to the Bull/Bear synthesis as normalized evidence claims.
 - Structured estimate revisions, earnings-history fields and FRED observations may be compared directly as supplied values.
 - Missing or unavailable sources reduce confidence instead of being filled from model memory.
 
