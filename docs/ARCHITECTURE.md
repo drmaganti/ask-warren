@@ -165,7 +165,8 @@ Warren -> a specific UI
 - The cache is memory-first and optionally backed by Upstash Redis. Redis entries retain the same source-specific TTLs, so persistence across cold starts does not weaken freshness.
 - Redis applies the source TTL directly to every key and deletes the key automatically at expiry. No stale duplicate is retained. If Redis is missing or unavailable, providers continue through the local cache and authoritative sources.
 - Per-key request coalescing prevents simultaneous requests for the same ticker or global macro bundle from duplicating upstream work.
-- Gemini results are keyed by normalized metrics, deterministic scores and the evidence fingerprint, so a changed input cannot reuse an old synthesis.
+- Gemini results are content-addressed from the exact semantic packet sent to the model. Retrieval timestamps are excluded, so refreshing identical facts reuses the saved synthesis; any changed metric, selected claim, source status, evidence content, model or packet version creates a new key.
+- Successful model syntheses persist for up to 30 days. Superseded entries are unreachable as soon as inputs change and Redis deletes them automatically at expiry, limiting retained storage.
 - A deterministic fallback caused by a transient Gemini failure is returned safely but not stored in the synthesis cache.
 
 ## Freshness model (target)

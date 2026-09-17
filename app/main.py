@@ -31,7 +31,7 @@ def _deep_provider():
                 primary=GeminiDeepAnalysisProvider(),
                 fallback=DeterministicDeepAnalysisProvider(),
             ),
-            ttl_seconds=1800,
+            ttl_seconds=2592000,
         )
     return DeterministicDeepAnalysisProvider()
 

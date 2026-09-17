@@ -11,6 +11,7 @@ from typing import Any, Callable, Generic, Hashable, TypeVar
 
 import httpx
 
+from .analysis_input import analysis_input_payload
 from .models import CategoryScores, DeepAnalysis, EvidenceBundle, MetricSnapshot
 from .protocols import DeepAnalysisProvider, EvidenceProvider, MarketDataProvider
 
@@ -205,22 +206,23 @@ class CachedEvidenceProvider:
 
 
 class CachedDeepAnalysisProvider:
-    def __init__(self, upstream: DeepAnalysisProvider, ttl_seconds: float = 1800):
+    def __init__(self, upstream: DeepAnalysisProvider, ttl_seconds: float = 2_592_000):
         self.upstream = upstream
         self.cache: PersistentTTLCache[tuple[DeepAnalysis, str | None]] = PersistentTTLCache(
-            "analysis-v12-complete-fallback-insights",
+            "analysis-v13-semantic-inputs",
             ttl_seconds,
             lambda value: {"analysis": _model_encoder(value[0]), "model": value[1]},
             lambda value: (DeepAnalysis.model_validate(value["analysis"]), value.get("model")),
         )
         self._locks: dict[str, asyncio.Lock] = {}
 
-    @staticmethod
-    def _key(metrics: MetricSnapshot, scores: CategoryScores, evidence: EvidenceBundle) -> str:
-        payload = {
-            "metrics": metrics.model_dump(exclude_none=True, mode="json"),
-            "scores": scores.model_dump(mode="json"),
-            "evidence_version": evidence.evidence_version,
+    def _key(self, metrics: MetricSnapshot, scores: CategoryScores, evidence: EvidenceBundle) -> str:
+        primary = getattr(self.upstream, "primary", self.upstream)
+        payload = analysis_input_payload(metrics, scores, evidence)
+        payload["provider"] = {
+            "wrapper": self.upstream.__class__.__name__,
+            "primary": primary.__class__.__name__,
+            "model": getattr(primary, "model", None),
         }
         raw = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
         return hashlib.sha256(raw.encode("utf-8")).hexdigest()

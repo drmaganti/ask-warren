@@ -184,6 +184,7 @@ Estimate revisions are intentionally not added to Screen until point-in-time/cal
 - [x] cached fundamentals until TTL expiry;
 - [x] per-source evidence caches with separate TTLs;
 - [x] Deep cache keyed to metrics, scores and evidence version;
+- [x] semantic LLM-input cache that ignores refresh timestamps and reuses unchanged analyses across cold starts;
 - [x] duplicate-request coalescing and parallel evidence collection;
 - [x] optional persistent cross-instance cache through Upstash Redis;
 - [ ] event-driven invalidation for material filings and earnings releases;

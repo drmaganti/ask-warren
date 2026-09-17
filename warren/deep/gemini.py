@@ -5,8 +5,8 @@ import os
 
 import httpx
 
+from ..analysis_input import analysis_input_payload
 from ..models import CategoryScores, DeepAnalysis, EvidenceBundle, MetricSnapshot
-from .drivers import earnings_bridge
 
 
 class GeminiDeepAnalysisProvider:
@@ -45,44 +45,7 @@ class GeminiDeepAnalysisProvider:
         # filings, news and transcripts. Sending the raw evidence again doubled
         # the prompt, increased latency and caused Gemini read timeouts on Vercel.
         # Keep a bounded, category-diverse claim packet with exact citation IDs.
-        by_category: dict[str, list] = {}
-        for claim in sorted(evidence.claims, key=lambda item: (item.authority_tier, -item.independent_source_count)):
-            group = by_category.setdefault(claim.category, [])
-            if len(group) < 4:
-                group.append(claim)
-        compact_claims = []
-        for claims in by_category.values():
-            for claim in claims:
-                compact_claims.append({
-                    "id": claim.id,
-                    "category": claim.category,
-                    "claim": claim.claim[:1800],
-                    "as_of": claim.as_of.isoformat() if claim.as_of else None,
-                    "authority_tier": claim.authority_tier,
-                    "retrieval_depth": claim.retrieval_depth,
-                    "confidence": claim.confidence,
-                    "independent_source_count": claim.independent_source_count,
-                    "duplicate_count": claim.duplicate_count,
-                    "references": [reference.model_dump(exclude_none=True, mode="json") for reference in claim.references[:2]],
-                })
-        return json.dumps(
-            {
-                "metrics": metrics.model_dump(exclude_none=True, mode="json"),
-                "scores": scores.model_dump(mode="json"),
-                "earnings_bridge": earnings_bridge(metrics),
-                "evidence": {
-                    "collected_at": evidence.collected_at.isoformat() if evidence.collected_at else None,
-                    "evidence_version": evidence.evidence_version,
-                    "claims": compact_claims,
-                    "source_status": [item.model_dump(exclude_none=True, mode="json") for item in evidence.source_status],
-                    "metadata": {
-                        key: value for key, value in evidence.metadata.items()
-                        if key in {"sec_cik", "sec_filing_transport", "sec_rag", "earnings_call", "evidence_router"}
-                    },
-                },
-            },
-            separators=(",", ":"),
-        )
+        return json.dumps(analysis_input_payload(metrics, scores, evidence), separators=(",", ":"))
 
     async def analyze(
         self,
