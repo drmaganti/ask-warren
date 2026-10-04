@@ -5,7 +5,7 @@ from typing import Any
 from .models import CategoryScores, EvidenceBundle, MetricSnapshot
 
 
-ANALYSIS_INPUT_VERSION = "semantic-v1"
+ANALYSIS_INPUT_VERSION = "semantic-v2-research-review"
 
 
 def analysis_input_payload(
@@ -25,7 +25,11 @@ def analysis_input_payload(
     by_category: dict[str, list] = {}
     for claim in sorted(evidence.claims, key=lambda item: (item.authority_tier, -item.independent_source_count)):
         group = by_category.setdefault(claim.category, [])
-        if len(group) < 4:
+        if claim.category == "earnings_call" and sum(
+            item.metadata.get("quarter") == claim.metadata.get("quarter") for item in group
+        ) >= 4:
+            continue
+        if len(group) < (8 if claim.category == "earnings_call" else 4):
             group.append(claim)
 
     compact_claims = []
@@ -44,10 +48,13 @@ def analysis_input_payload(
                 "references": [reference.model_dump(exclude_none=True, mode="json") for reference in claim.references[:2]],
             }
             compact_claims.append(item)
+            if claim.category == "earnings_call":
+                item["quarter"] = claim.metadata.get("quarter")
+                item["management_answer"] = claim.metadata.get("answer", "")[:1400]
 
     metadata = {
         key: value for key, value in evidence.metadata.items()
-        if key in {"sec_cik", "sec_filing_transport", "sec_rag", "earnings_call", "evidence_router"}
+        if key in {"sec_cik", "sec_filing_transport", "sec_rag", "earnings_call", "evidence_router", "saved_thesis"}
     }
     if isinstance(metadata.get("evidence_router"), dict):
         metadata["evidence_router"] = {

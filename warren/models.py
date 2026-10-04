@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import UTC, date, datetime, timedelta
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class MetricComparison(BaseModel):
@@ -326,6 +326,54 @@ class InvestmentInsight(BaseModel):
     claim_ids: list[str] = Field(default_factory=list)
 
 
+class SavedThesis(BaseModel):
+    statements: list[str] = Field(min_length=1, max_length=3)
+    invalidation_conditions: list[str] = Field(default_factory=list, max_length=3)
+    saved_at: datetime
+
+    @field_validator("statements", "invalidation_conditions")
+    @classmethod
+    def bounded_text(cls, values):
+        if any(not item.strip() or len(item) > 500 for item in values):
+            raise ValueError("Each thesis statement or condition must contain 1–500 characters")
+        return [item.strip() for item in values]
+
+    @field_validator("saved_at")
+    @classmethod
+    def valid_timestamp(cls, value):
+        if value.tzinfo is None or value > datetime.now(UTC) + timedelta(minutes=1):
+            raise ValueError("saved_at must be timezone-aware and cannot be in the future")
+        return value
+
+
+class ThesisCheck(BaseModel):
+    statement_index: int = Field(ge=0, le=2)
+    status: Literal["supported", "weakened", "unresolved"] = "unresolved"
+    explanation: str = Field(max_length=1000)
+    evidence_quote: str = Field(default="", max_length=1000)
+    claim_ids: list[str] = Field(default_factory=list, max_length=5)
+
+
+class LanguageChange(BaseModel):
+    current_claim_id: str
+    previous_claim_id: str
+    current_quote: str = Field(min_length=12, max_length=700)
+    previous_quote: str = Field(min_length=12, max_length=700)
+    interpretation: str = Field(max_length=1000)
+
+
+class ResearchReview(BaseModel):
+    version: str = "research-review-v1"
+    reviewed_at: datetime | None = None
+    saved_thesis: SavedThesis | None = None
+    thesis_checks: list[ThesisCheck] = Field(default_factory=list, max_length=3)
+    language_changes: list[LanguageChange] = Field(default_factory=list, max_length=3)
+    missing_evidence: list[str] = Field(default_factory=list)
+    analyst_context: dict[str, Any] = Field(default_factory=dict)
+    earnings_context: dict[str, Any] = Field(default_factory=dict)
+    limitations: list[str] = Field(default_factory=list)
+
+
 class DeepAnalysis(BaseModel):
     thesis: str
     positives: list[str]
@@ -342,6 +390,7 @@ class DeepAnalysis(BaseModel):
     citations: list[AnalysisCitation] = Field(default_factory=list)
     bull_insights: list[InvestmentInsight] = Field(default_factory=list)
     bear_insights: list[InvestmentInsight] = Field(default_factory=list)
+    research_review: ResearchReview = Field(default_factory=ResearchReview)
 
 
 class DcfScenario(BaseModel):

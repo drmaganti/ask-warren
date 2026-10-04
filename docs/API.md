@@ -200,3 +200,25 @@ Do not add these until needed by a client:
 - `GET /v1/methodology` for machine-readable methodology/version metadata.
 - `GET /v1/analysis/{ticker}` for cached analysis retrieval.
 - `POST /v1/screen` and `POST /v1/deep` only if separate endpoints materially simplify client use; the current mode contract is intentionally compact.
+
+
+## Saved thesis and research review (0.10.0)
+
+Deep requests optionally accept saved_thesis, containing statements (one to three strings),
+invalidation_conditions (up to three strings) and saved_at (timezone-aware ISO timestamp).
+Each statement/condition must contain 1–500 characters. Future timestamps are rejected.
+Screen requests reject saved_thesis. This user text is untrusted context, not evidence.
+It enters the semantic cache key so different theses cannot reuse one another's assessments.
+
+analysis.research_review includes saved_thesis, thesis_checks, language_changes,
+analyst_context, earnings_context, missing_evidence and limitations. Supported/weakened
+assessments require an exact supplied-claim quote plus structured/excerpt/full-text evidence;
+otherwise they become unresolved. This validates provenance, not semantic entailment.
+Language comparisons require exact management-answer quotes from distinct ordered quarters.
+Coverage is bounded Q&A excerpts, not entire transcripts; omission and motive claims are
+not supported. Target dispersion and EPS differences are calculated in code.
+No six-month target backfill or validated pre-announcement consensus archive is implied.
+
+Personal thesis versions and report snapshots persist in browser localStorage (24 each per
+company), without device synchronization. The selected thesis is sent to Warren and its
+configured model; cached analysis results follow existing server retention.

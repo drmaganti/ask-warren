@@ -2,6 +2,14 @@
 
 All notable product/module changes should be recorded here.
 
+## 0.10.0 — 2026-10-03
+
+- Research Journal with browser-local, versioned personal theses and 24 distinct report snapshots per company.
+- Optional saved-thesis Deep input, source-checked supported/weakened/unresolved assessments, analyst target dispersion and explicit research gaps.
+- Bounded current/prior earnings-call excerpts and exact management-quote comparisons; prior retrieval failures retain current evidence.
+- Personal thesis context in semantic cache fingerprints, without mutating shared evidence.
+- Existing screening and verdict rules preserved; no DCF workbook or new paid service added.
+
 ## Unreleased
 
 - SEC filing RAG using Upstash Vector hosted embeddings, with primary-source full-text claims and citations.

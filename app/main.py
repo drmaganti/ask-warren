@@ -62,7 +62,7 @@ engine = Warren(
 
 app = FastAPI(
     title="Ask Warren Stock Intelligence",
-    version="0.9.0",
+    version="0.10.0",
     description="Standalone stock research experience powered by the reusable Warren engine.",
 )
 
@@ -79,6 +79,7 @@ def health() -> dict[str, str]:
     return {
         "status": "ok",
         "service": "warren",
+        "research_review": "research-review-v1",
         "confidence_model": "claim-weighted-v1",
         "deep_provider": "gemini" if os.getenv("GEMINI_API_KEY") else "deterministic-v1.3-ranked-lenses",
         "evidence_router": EvidenceRouter.VERSION,
@@ -118,7 +119,7 @@ async def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
         return AnalyzeResponse.model_validate({"mode": "screen", **result.model_dump()})
 
     try:
-        result = await engine.deep(request.ticker or "")
+        result = await engine.deep(request.ticker or "", saved_thesis=request.saved_thesis)
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except Exception as exc:

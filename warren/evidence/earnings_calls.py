@@ -19,7 +19,7 @@ class AlphaVantageEarningsCallProvider:
 
     ENDPOINT = "https://www.alphavantage.co/query"
     SOURCE_URL = "https://www.alphavantage.co/documentation/#earnings-call-transcript"
-    cache_namespace = "alpha-vantage-earnings-calls-v5"
+    cache_namespace = "alpha-vantage-earnings-calls-v6-paired"
     MATERIAL_TERMS = (
         "guidance", "demand", "traffic", "volume", "pricing", "price", "margin",
         "cost", "investment", "return", "growth", "revenue", "earnings", "cash flow",
@@ -68,6 +68,11 @@ class AlphaVantageEarningsCallProvider:
         preferred = self._fiscal_quarter(metrics)
         fallback = self._quarters()
         return ([preferred] if preferred else []) + [q for q in fallback if q != preferred][:3]
+
+    @staticmethod
+    def _previous_quarter(quarter: str) -> str:
+        year, number = int(quarter[:4]), int(quarter[-1])
+        return f"{year}Q{number - 1}" if number > 1 else f"{year - 1}Q4"
 
     def _request(self, ticker: str, quarter: str) -> dict[str, Any]:
         response = httpx.get(
@@ -167,6 +172,20 @@ class AlphaVantageEarningsCallProvider:
                     "raw_transcript_retained": False,
                     "questions_retained": len(bundle.earnings_call_qa),
                 }
+                # One bounded extra request enables matched-quarter comparisons.
+                # A prior-quarter failure must never erase the current excerpts.
+                previous = self._previous_quarter(quarter)
+                try:
+                    time.sleep(1.1)
+                    prior_payload = self._request(symbol, previous)
+                    prior_turns = prior_payload.get("transcript")
+                    if isinstance(prior_turns, list) and prior_turns:
+                        bundle.earnings_call_qa.extend(self._extract(previous, prior_turns))
+                        bundle.metadata["earnings_call"]["previous_quarter"] = previous
+                    else:
+                        bundle.source_status.append(SourceStatus(source="Prior earnings-call excerpts", status="unavailable", detail="Prior quarter transcript is unavailable or provider-limited."))
+                except Exception:
+                    bundle.source_status.append(SourceStatus(source="Prior earnings-call excerpts", status="unavailable", detail="Prior quarter retrieval failed; current excerpts retained."))
                 break
             bundle.source_status.append(SourceStatus(
                 source="Earnings-call transcripts",

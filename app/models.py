@@ -4,7 +4,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
 
-from warren.models import CategoryScores, DcfResult, DeepAnalysis, EvidenceBundle, MetricSnapshot, ScreenResult
+from warren.models import CategoryScores, DcfResult, DeepAnalysis, EvidenceBundle, MetricSnapshot, ScreenResult, SavedThesis
 
 
 class AnalyzeRequest(BaseModel):
@@ -13,6 +13,7 @@ class AnalyzeRequest(BaseModel):
     tickers: list[str] | None = Field(default=None, min_length=1, max_length=1000)
     top_n: int = Field(default=25, ge=1, le=100)
     min_score: float = Field(default=0, ge=0, le=100)
+    saved_thesis: SavedThesis | None = None
 
     @model_validator(mode="after")
     def validate_mode_inputs(self):
@@ -22,6 +23,8 @@ class AnalyzeRequest(BaseModel):
             if self.tickers:
                 raise ValueError("tickers is only valid when mode='screen'")
         else:
+            if self.saved_thesis:
+                raise ValueError("saved_thesis is only valid when mode='deep'")
             if not self.tickers:
                 raise ValueError("tickers is required when mode='screen'")
             if self.ticker:

@@ -23,6 +23,7 @@ Primary research tabs:
 3. Expectations
 4. Financials
 5. Evidence
+6. Research Journal
 
 The first screen must answer the decision question quickly: Warren's current view, confidence, investment thesis, analyst price-target context, strongest reasons to own, strongest reasons to sell or wait, and observable signals that could change the view.
 
@@ -72,3 +73,12 @@ The deterministic DCF code may remain temporarily in the backend for compatibili
 The v2 interface is served from `web/index-v2.html`.
 The refreshed public methodology is served from `web/methodology-v2.html`.
 The prior HTML files are retained temporarily as rollback references.
+
+
+## Research Journal (0.10.0)
+
+Editable personal thesis statements and invalidation conditions, immutable browser-local
+versions, source-checked evidence reviews, paired management quotes, analyst target dispersion,
+missing evidence and locally observed target/report history. History begins on first save
+and is capped at 24 thesis versions and 24 distinct reports per company. Storage failures
+are shown. The share link contains only the ticker, never personal thesis text.

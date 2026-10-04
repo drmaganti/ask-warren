@@ -274,7 +274,8 @@ def test_earnings_call_provider_extracts_material_qa_and_router_cites_it():
     provider = StubEarningsCallProvider(api_key="test")
     raw = provider.fetch_evidence("TEST", MetricSnapshot(ticker="TEST"))
 
-    assert len(raw.earnings_call_qa) == 1
+    assert len(raw.earnings_call_qa) == 2
+    assert [item.quarter for item in raw.earnings_call_qa] == ["2026Q3", "2026Q2"]
     assert raw.earnings_call_qa[0].analyst == "A. Analyst"
     assert "transaction growth" in raw.earnings_call_qa[0].answer
     assert raw.metadata["earnings_call"]["raw_transcript_retained"] is False

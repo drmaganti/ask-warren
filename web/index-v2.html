@@ -240,6 +240,11 @@ details.disclosure summary{cursor:pointer;color:#b9c9c1;padding:9px 0;font-weigh
   .tabBar{gap:22px;margin-top:14px}.card{padding:15px}.viewRow{align-items:flex-start}.targetTop{gap:8px}.targetStat strong{font-size:17px}
   .caseGrid{gap:14px}.metricCard,.halfCard,.fullCard{grid-column:span 12}.grid12{gap:10px}
 }
+
+.journalGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.journalWide{grid-column:1/-1}
+.thesisInput{display:block;width:100%;min-height:72px;margin:8px 0 14px;padding:12px;background:var(--surface,#10251b);color:var(--text,#e8f3ec);border:1px solid var(--line);border-radius:8px;resize:vertical;font:inherit}
+.journalActions{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}.journalDate{color:var(--muted);font-size:12px}.reviewQuote{margin:10px 0;padding:10px;border-left:2px solid var(--green);color:var(--muted);font-size:13px}.reviewLabel{font-weight:750;font-size:12px;text-transform:uppercase;letter-spacing:.04em}.reviewLabel.weakened{color:var(--red)}.reviewLabel.supported{color:var(--green)}
+@media(max-width:800px){.journalGrid{grid-template-columns:1fr}.journalWide{grid-column:auto}}
 </style>
 </head>
 <body>
@@ -321,6 +326,7 @@ details.disclosure summary{cursor:pointer;color:#b9c9c1;padding:9px 0;font-weigh
         <button class="tab" id="tab-expectations" data-panel="expectations" role="tab" aria-selected="false">Expectations</button>
         <button class="tab" id="tab-financials" data-panel="financials" role="tab" aria-selected="false">Financials</button>
         <button class="tab" id="tab-evidence" data-panel="evidence" role="tab" aria-selected="false">Evidence</button>
+        <button class="tab" id="tab-journal" data-panel="journal" role="tab" aria-selected="false">Research Journal</button>
       </div>
 
       <section class="panel" id="view-overview" role="tabpanel">
@@ -386,6 +392,25 @@ details.disclosure summary{cursor:pointer;color:#b9c9c1;padding:9px 0;font-weigh
         </div>
       </section>
 
+      <section class="panel" id="view-journal" role="tabpanel" hidden>
+        <div class="expectHeader"><h2>Research Journal</h2><div class="muted">Keep your original reasoning and review it against new evidence.</div></div>
+        <div class="journalGrid">
+          <article class="card"><h3>Your Company Thesis</h3><p class="cardLead">Write up to three statements about why the company interests you. Saved versions stay in this browser; each review sends the selected thesis to Warren.</p>
+            <form id="thesisForm">
+              <label for="thesisStatement0">Statement 1</label><textarea class="thesisInput" id="thesisStatement0" maxlength="500" placeholder="What needs to be true for your thesis to hold?"></textarea>
+              <label for="thesisStatement1">Statement 2</label><textarea class="thesisInput" id="thesisStatement1" maxlength="500"></textarea>
+              <label for="thesisStatement2">Statement 3</label><textarea class="thesisInput" id="thesisStatement2" maxlength="500"></textarea>
+              <label for="thesisConditions">What would invalidate your view?</label><textarea class="thesisInput" id="thesisConditions" maxlength="1502" placeholder="Up to three conditions, one per line. Be specific about what you would observe."></textarea>
+              <div class="journalActions"><button class="btn" type="submit">Save thesis</button><button class="btn ghost" type="button" id="draftThesis">Use report as draft</button><button class="btn ghost" type="button" id="reviewThesis">Review saved thesis</button></div>
+            </form><p class="journalDate" id="thesisSavedStatus"></p>
+          </article>
+          <article class="card"><h3>Evidence vs Saved Thesis</h3><p class="cardLead">Supported, weakened or unresolved. These are research interpretations, not trade signals.</p><div id="thesisReview"></div><h3 style="margin-top:20px">Earnings Review</h3><div id="earningsReview"></div></article>
+          <article class="card"><h3>Management Language Changes</h3><p class="cardLead">Matched Q&amp;A excerpts from successive quarters. Wording changes do not establish management motives.</p><div id="languageChanges"></div></article>
+          <article class="card"><h3>Analyst Disagreement &amp; Missing Evidence</h3><div id="analystContext"></div><div id="researchGaps"></div></article>
+          <article class="card journalWide"><h3>Thesis &amp; Report History</h3><p class="cardLead">The latest 24 thesis versions and 24 distinct reports for this company are kept locally. History begins with your first save; it does not sync between devices.</p><div id="journalHistory"></div><details class="disclosure"><summary>Review limitations</summary><div id="researchLimitations"></div></details></article>
+        </div>
+      </section>
+
       <div class="footer">Ask Warren is research software. It does not provide personalized investment advice or execute trades. Analyst price targets are estimates, not guarantees.</div>
     </div>
   </main>
@@ -406,7 +431,7 @@ function sourceUrlForClaim(claim,ticker){let r=(claim?.references||[])[0]||{};if
 function citationLink(ids,e,ticker){for(let id of (ids||[])){let c=(e.claims||[]).find(x=>x.id===id),url=sourceUrlForClaim(c,ticker);if(url){let r=(c.references||[])[0]||{};return `<a class="sourcePill" href="${esc(url)}" target="_blank" rel="noopener">${esc(r.publisher||r.source||'Source')} ↗</a>`}}return''}
 function targetMarkup(m){
   let low=Number(m.analyst_target_low),med=Number(m.analyst_target_median),high=Number(m.analyst_target_high),price=Number(m.price);
-  if(![low,med,high].every(Number.isFinite))return `<div class="muted" style="padding:18px 0">Current analyst target range unavailable.</div>`;
+  if([m.analyst_target_low,m.analyst_target_median,m.analyst_target_high].some(x=>x==null)||![low,med,high].every(Number.isFinite)||low<=0||low>med||med>high)return `<div class="muted" style="padding:18px 0">Current analyst target range unavailable.</div>`;
   let span=Math.max(high-low,.01),pos=x=>Math.max(0,Math.min(100,(x-low)/span*100));
   let medUp=Number.isFinite(price)&&price!==0?(med/price-1):null, lowGap=Number.isFinite(price)&&price!==0?(low/price-1):null,highGap=Number.isFinite(price)&&price!==0?(high/price-1):null;
   return `<div class="targetTop"><div class="targetStat"><strong>${fmtMoney(low)}</strong><small>Low</small></div><div class="targetStat" style="text-align:center"><strong>${fmtMoney(med)}</strong><small>Median</small></div><div class="targetStat" style="text-align:right"><strong>${fmtMoney(high)}</strong><small>High</small></div></div>
@@ -458,6 +483,7 @@ function sourceRows(list,mapper){return (list||[]).map(mapper).join('')||'<div c
 function activateTab(name,focus=true){
   document.querySelectorAll('.tab').forEach(t=>{let active=t.dataset.panel===name;t.setAttribute('aria-selected',String(active));t.tabIndex=active?0:-1});
   document.querySelectorAll('.panel').forEach(p=>p.hidden=p.id!==`view-${name}`);
+  $(`tab-${name}`)?.scrollIntoView({block:'nearest',inline:'nearest'});
   if(focus)$(`tab-${name}`)?.focus();
 }
 function expectationRead(revisions,m){
@@ -468,7 +494,9 @@ function expectationRead(revisions,m){
   if(avg<-.02)return 'Analyst earnings expectations have generally moved lower over the past month. Warren treats that as a meaningful warning signal even if headline price targets have not fully adjusted.';
   return 'Analyst estimates are relatively stable. Warren gives more weight to the business evidence and the gap between the current price and the target range than to small estimate changes.';
 }
+let currentReport=null;
 function render(data){
+  currentReport=data;
   const m=data.metrics||{},s=data.scores||{},a=data.analysis||{},e=data.evidence||{};
   const ticker=data.ticker||'',bull=insightItems(a,'bull'),bear=insightItems(a,'bear'),statuses=e.source_status||[];
   $('companyTicker').textContent=ticker.slice(0,4);$('companyName').textContent=m.company_name||ticker;
@@ -517,7 +545,8 @@ function render(data){
   let statusLabel={ok:'Available',partial:'Partial',unavailable:'Unavailable',error:'Error'};$('sourceStatuses').innerHTML=statuses.map(x=>`<div class="sourceRow"><strong>${esc(x.source)}</strong><small>${esc(statusLabel[x.status]||human(x.status))}${x.detail?' · '+esc(x.detail):''}</small></div>`).join('')||'<div class="muted">Source status unavailable.</div>';
 
   $('appTicker').value=ticker;$('landingTicker').value=ticker;document.body.classList.add('has-results');activateTab('overview',false);
-  let recent=JSON.parse(localStorage.getItem('ask-warren-recent')||'[]').filter(x=>x!==ticker);recent.unshift(ticker);recent=recent.slice(0,6);localStorage.setItem('ask-warren-recent',JSON.stringify(recent));renderRecent(recent,ticker);
+  let recent=safeLocalJSON('ask-warren-recent',[]).filter(x=>x!==ticker);recent.unshift(ticker);recent=recent.slice(0,6);try{localStorage.setItem('ask-warren-recent',JSON.stringify(recent))}catch(_){};renderRecent(recent,ticker);
+  renderResearchJournal(data);
   window.scrollTo({top:0,behavior:'smooth'});
 }
 function renderRecent(recent,current){$('recentList').innerHTML=(recent||[]).map(t=>`<button class="recentTicker ${t===current?'active':''}" type="button" data-recent="${esc(t)}" aria-current="${t===current?'page':'false'}">${esc(t)}</button>`).join('')}
@@ -529,11 +558,44 @@ async function run(value,preserveReport=false){
   if(preserveReport){$('appTicker').value=t;$('priceContext').textContent=`Loading ${t} report…`;showToast(`Loading ${t} report…`)}
   $('status').className='status';$('status').style.display='block';$('status').innerHTML='<span class="spinner"></span>Collecting market data, analyst expectations, evidence, and competing views…';
   try{
-    let r=await fetch('/v1/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:'deep',ticker:t})}),body=await r.json();
+    let r=await fetch('/v1/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:'deep',ticker:t,saved_thesis:readJournal(t).theses.at(-1)||null})}),body=await r.json();
     if(!r.ok)throw new Error(body.detail||'Analysis failed');
     render(body);history.replaceState(null,'',`/?ticker=${encodeURIComponent(t)}`);$('status').style.display='none';
   }catch(err){if(preserveReport){$('status').style.display='none';$('priceContext').textContent='Current report retained';showToast(`Could not load ${t}. Current report retained.`)}else{document.body.classList.remove('has-results');$('status').className='status error';$('status').textContent=`Could not analyze ${t}: ${err.message}`;$('status').style.display='block'}}
 }
+function safeLocalJSON(key,fallback){try{let value=JSON.parse(localStorage.getItem(key)||'null');return Array.isArray(fallback)?(Array.isArray(value)?value:fallback):(value&&typeof value==='object'&&!Array.isArray(value)?value:fallback)}catch(_){return fallback}}
+function readJournal(ticker){let j=safeLocalJSON(`ask-warren-journal-v1:${ticker}`,{});return {theses:Array.isArray(j.theses)?j.theses.filter(x=>Array.isArray(x.statements)&&x.statements.length>=1&&x.statements.length<=3&&x.statements.every(t=>typeof t==='string'&&t.length>0&&t.length<=500)&&Array.isArray(x.invalidation_conditions)&&x.invalidation_conditions.length<=3&&x.invalidation_conditions.every(t=>typeof t==='string'&&t.length<=500)&&friendlyDate(x.saved_at)).slice(-24):[],reports:Array.isArray(j.reports)?j.reports.filter(x=>x&&typeof x==='object'&&typeof x.thesis==='string'&&friendlyDate(x.saved_at)).slice(-24):[]}}
+function writeJournal(ticker,journal){try{localStorage.setItem(`ask-warren-journal-v1:${ticker}`,JSON.stringify(journal));return true}catch(_){showToast('Could not save history. Browser storage is unavailable or full.');return false}}
+function renderResearchJournal(data){
+  let ticker=data.ticker,journal=readJournal(ticker),review=data.analysis?.research_review||{},saved=journal.theses.at(-1),a=data.analysis||{},m=data.metrics||{},e=data.evidence||{};
+  let snapshot={saved_at:review.reviewed_at||new Date().toISOString(),thesis:a.thesis||'',verdict:a.verdict||'watch',low:m.analyst_target_low??null,median:m.analyst_target_median??null,high:m.analyst_target_high??null,period:review.earnings_context?.reported_period||null,checks:review.thesis_checks||[],saved_thesis:review.saved_thesis||null};
+  let signature=x=>JSON.stringify([x.thesis,x.verdict,x.low,x.median,x.high,x.period,x.checks,x.saved_thesis]);
+  if(!journal.reports.length||signature(journal.reports.at(-1))!==signature(snapshot)){journal.reports.push(snapshot);journal.reports=journal.reports.slice(-24);writeJournal(ticker,journal)}
+  for(let i=0;i<3;i++)$(`thesisStatement${i}`).value=saved?.statements[i]||'';
+  $('thesisConditions').value=(saved?.invalidation_conditions||[]).join('\n');
+  $('thesisSavedStatus').textContent=saved?`Saved ${new Date(saved.saved_at).toLocaleString()} in this browser. Reviewing a newly saved thesis requires another analysis.`:'No thesis saved yet. You can write your own or edit a draft from this report.';
+  $('thesisReview').innerHTML=(review.saved_thesis?`<p class="journalDate">Review of thesis saved ${esc(new Date(review.saved_thesis.saved_at).toLocaleString())}</p>`:'')+(review.thesis_checks||[]).map(x=>`<div class="sourceRow"><span class="reviewLabel ${esc(x.status)}">${esc(human(x.status))}</span><p><b>${esc(review.saved_thesis?.statements[x.statement_index]||'Saved statement')}</b></p><p>${esc(x.explanation)}</p>${x.evidence_quote?`<blockquote class="reviewQuote">${esc(x.evidence_quote)}</blockquote>`:''}${citationLink(x.claim_ids,e,ticker)}</div>`).join('')||'<p class="muted">Save a thesis, then choose Review saved thesis to compare it with current evidence.</p>';
+  let earnings=review.earnings_context||{};
+  $('earningsReview').innerHTML=earnings.latest_reported_eps==null?'<p class="muted">Reported EPS evidence is unavailable.</p>':`<div class="sourceRow"><b>${esc(friendlyDate(earnings.reported_period)||'Latest reported period')}</b><p>Reported EPS ${fmtNum(earnings.latest_reported_eps,2)} · consensus ${fmtNum(earnings.consensus_eps,2)} · difference ${fmtNum(earnings.eps_difference,2)}</p><small class="muted">Historical provider observation; a complete pre-announcement expectations snapshot is not guaranteed.</small></div>`;
+  $('languageChanges').innerHTML=(review.language_changes||[]).map(x=>`<div class="sourceRow"><b>Previous quarter</b><blockquote class="reviewQuote">${esc(x.previous_quote)}</blockquote>${citationLink([x.previous_claim_id],e,ticker)}<p><b>Current quarter</b></p><blockquote class="reviewQuote">${esc(x.current_quote)}</blockquote>${citationLink([x.current_claim_id],e,ticker)}<p>${esc(x.interpretation)}</p></div>`).join('')||'<p class="muted">No source-checked wording comparison is available. Two comparable call excerpts are required; this does not establish that wording stayed unchanged.</p>';
+  let context=review.analyst_context||{};
+  $('analystContext').innerHTML=context.available?`<div class="sourceRow"><b>Target range: ${fmtMoney(context.low)}–${fmtMoney(context.high)}</b><p>The range is ${fmtPct(context.range_as_fraction_of_median)} of the median target, across ${esc(context.analyst_count??'an unspecified number of')} analyst opinions.</p><small class="muted">${esc(context.interpretation)}</small></div>`:'<p class="muted">A complete analyst target range is unavailable.</p>';
+  $('researchGaps').innerHTML=(review.missing_evidence||[]).map(x=>`<div class="sourceRow"><p>${esc(x)}</p></div>`).join('')||'<p class="muted">Research gap details are unavailable.</p>';
+  let theses=[...journal.theses].reverse().map(x=>`<details class="sourceRow"><summary><b>Saved thesis · ${esc(new Date(x.saved_at).toLocaleString())}</b></summary><ol>${x.statements.map(t=>`<li>${esc(t)}</li>`).join('')}</ol>${x.invalidation_conditions.length?`<p><b>What would invalidate it</b></p><ul>${x.invalidation_conditions.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>`:''}</details>`).join('');
+  let reports=[...journal.reports].reverse().map(x=>`<details class="sourceRow"><summary><b>${esc(human(x.verdict))} · ${esc(new Date(x.saved_at).toLocaleString())}</b></summary><p>${esc(x.thesis)}</p>${x.saved_thesis?`<p class="journalDate">Against thesis saved ${esc(new Date(x.saved_thesis.saved_at).toLocaleString())}</p>${(x.checks||[]).map(c=>`<p><b>${esc(human(c.status))}:</b> ${esc(x.saved_thesis.statements[c.statement_index]||'')} · ${esc(c.explanation)}</p>`).join('')}`:''}<small class="muted">Saved target range ${fmtMoney(x.low)} / ${fmtMoney(x.median)} / ${fmtMoney(x.high)}</small></details>`).join('');
+  $('journalHistory').innerHTML=theses+reports||'<p class="muted">No saved history yet.</p>';
+  $('researchLimitations').innerHTML=(review.limitations||[]).map(x=>`<div class="sourceRow"><p>${esc(x)}</p></div>`).join('');
+}
+$('thesisForm').addEventListener('submit',event=>{
+  event.preventDefault();if(!currentReport)return;
+  let statements=[0,1,2].map(i=>$(`thesisStatement${i}`).value.trim()).filter(Boolean),conditions=$('thesisConditions').value.split('\n').map(x=>x.trim()).filter(Boolean);
+  if(!statements.length||conditions.length>3||conditions.some(x=>x.length>500)){showToast('Add a thesis statement and up to three conditions of 500 characters each.');return}
+  let journal=readJournal(currentReport.ticker);journal.theses.push({statements,invalidation_conditions:conditions,saved_at:new Date().toISOString()});journal.theses=journal.theses.slice(-24);
+  if(writeJournal(currentReport.ticker,journal)){renderResearchJournal(currentReport);showToast('Thesis saved. Review it against current evidence when ready.')}
+});
+$('draftThesis').addEventListener('click',()=>{if(!currentReport)return;let a=currentReport.analysis||{},statements=(a.positives||[]).slice(0,3);if(!statements.length)statements=[a.thesis||''];for(let i=0;i<3;i++)$(`thesisStatement${i}`).value=(statements[i]||'').slice(0,500);$('thesisConditions').value=(a.what_would_change_view||[]).slice(0,3).map(x=>x.slice(0,500)).join('\n');showToast('Draft ready. Edit it before saving your thesis.')});
+$('reviewThesis').addEventListener('click',async()=>{if(!currentReport)return;let ticker=currentReport.ticker;if(!readJournal(ticker).theses.length){showToast('Save your thesis before reviewing it.');return}await run(ticker,true);activateTab('journal',false)});
+
 $('landingForm').addEventListener('submit',e=>{e.preventDefault();run($('landingTicker').value)});
 $('appForm').addEventListener('submit',e=>{e.preventDefault();run($('appTicker').value)});
 document.querySelectorAll('[data-t]').forEach(b=>b.addEventListener('click',()=>run(b.dataset.t)));
@@ -542,7 +604,7 @@ document.querySelectorAll('[data-focus-search]').forEach(b=>b.addEventListener('
 $('newAnalysis').addEventListener('click',()=>{document.body.classList.remove('has-results');history.replaceState(null,'','/');setTimeout(()=>$('landingTicker').focus(),50)});
 $('shareButton').addEventListener('click',shareAnalysis);$('shareSide').addEventListener('click',shareAnalysis);
 document.querySelectorAll('.tab').forEach((tab,index,tabs)=>{tab.addEventListener('click',()=>activateTab(tab.dataset.panel,false));tab.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight'].includes(e.key))return;e.preventDefault();let next=(index+(e.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;activateTab(tabs[next].dataset.panel)})});
-renderRecent(JSON.parse(localStorage.getItem('ask-warren-recent')||'[]'),null);
+renderRecent(safeLocalJSON('ask-warren-recent',[]),null);
 let initial=new URLSearchParams(location.search).get('ticker');if(initial)run(initial);
 </script>
 </body>

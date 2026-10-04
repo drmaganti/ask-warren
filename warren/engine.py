@@ -7,6 +7,8 @@ from .dcf import calculate_dcf
 from .confidence import assess_analysis_confidence
 from .protocols import DeepAnalysisProvider, EvidenceProvider, MarketDataProvider
 from .scoring import score_metrics
+from .models import SavedThesis
+from .research import finalize_research_review
 
 
 _IGNORED_MISSING = {"ticker", "company_name", "sector", "industry", "currency"}
@@ -139,7 +141,7 @@ class Warren:
             results=results[: request.top_n],
         )
 
-    async def deep(self, ticker: str) -> DeepResponse:
+    async def deep(self, ticker: str, *, saved_thesis: SavedThesis | None = None) -> DeepResponse:
         if self.deep_analysis is None:
             raise RuntimeError("A DeepAnalysisProvider must be configured for deep mode")
 
@@ -161,7 +163,12 @@ class Warren:
                     )
                 )
 
+        # Copy request-specific data so cached/shared evidence never acquires a personal thesis.
+        evidence = evidence.model_copy(deep=True)
+        if saved_thesis:
+            evidence.metadata["saved_thesis"] = saved_thesis.model_dump(mode="json")
         analysis, model = await self.deep_analysis.analyze(metrics, scores, evidence)
+        analysis = finalize_research_review(analysis, evidence, metrics, saved_thesis)
         analysis = validate_analysis_citations(analysis, evidence)
         analysis = reconcile_analysis_with_dcf(analysis, dcf)
         analysis = assess_analysis_confidence(analysis, evidence, metrics)
