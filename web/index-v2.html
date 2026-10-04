@@ -66,10 +66,15 @@ button:disabled{cursor:not-allowed;opacity:.55}
 .featureIcon{width:32px;height:32px;border:1px solid #315944;border-radius:8px;display:grid;place-items:center;color:var(--green);margin-bottom:12px}
 .feature strong{display:block;margin-bottom:4px}
 .feature small{color:var(--muted)}
-.status{display:none;max-width:1240px;margin:0 auto 18px;padding:12px 15px;border:1px solid var(--line);border-radius:10px;background:#0d1a15;color:#cad7d1}
+.status{display:none;position:fixed;z-index:1000;top:88px;left:50%;transform:translateX(-50%);width:min(620px,calc(100% - 32px));margin:0;padding:15px 17px;border:1px solid #315d47;border-radius:13px;background:rgba(10,25,19,.97);color:#e5eee9;box-shadow:0 16px 48px rgba(0,0,0,.46);backdrop-filter:blur(12px)}
+.status.loadingStatus{display:flex;align-items:center;gap:12px}
 .status.error{display:block;border-color:#753b3d;color:#ffd4d6}
-.spinner{display:inline-block;width:14px;height:14px;border:2px solid #496357;border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite;margin-right:8px;vertical-align:-2px}
+.status strong,.status small{display:block}.status strong{font-size:14px;color:#fff}.status small{margin-top:2px;color:#a9bbb2;font-size:12px}
+.spinner{display:inline-block;flex:0 0 auto;width:22px;height:22px;border:3px solid #496357;border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite}
+body.has-results .status{top:18px}
+body.is-loading .appSearch button,body.is-loading .searchBox button{cursor:wait;opacity:.72}
 @keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:700px){.status,body.has-results .status{top:12px;width:calc(100% - 24px)}}
 
 /* Analysis app */
 .appShell{display:none;min-height:calc(100vh - 72px);grid-template-columns:220px minmax(0,1fr)}
@@ -556,12 +561,14 @@ async function run(value,preserveReport=false){
   let t=String(value||'').trim().toUpperCase();
   if(!/^[A-Z][A-Z0-9.-]{0,11}$/.test(t)){document.body.classList.remove('has-results');$('status').className='status error';$('status').textContent='Enter a valid U.S. stock ticker.';$('status').style.display='block';return}
   if(preserveReport){$('appTicker').value=t;$('priceContext').textContent=`Loading ${t} report…`;showToast(`Loading ${t} report…`)}
-  $('status').className='status';$('status').style.display='block';$('status').innerHTML='<span class="spinner"></span>Collecting market data, analyst expectations, evidence, and competing views…';
+  document.body.classList.add('is-loading');document.body.setAttribute('aria-busy','true');
+  document.querySelectorAll('#landingForm button,#appForm button').forEach(button=>button.disabled=true);
+  $('status').className='status loadingStatus';$('status').style.display='flex';$('status').innerHTML=`<span class="spinner" aria-hidden="true"></span><span><strong>Building the ${esc(t)} report</strong><small>Collecting market data, analyst expectations, evidence, and competing views…</small></span>`;
   try{
     let r=await fetch('/v1/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:'deep',ticker:t,saved_thesis:readJournal(t).theses.at(-1)||null})}),body=await r.json();
     if(!r.ok)throw new Error(body.detail||'Analysis failed');
     render(body);history.replaceState(null,'',`/?ticker=${encodeURIComponent(t)}`);$('status').style.display='none';
-  }catch(err){if(preserveReport){$('status').style.display='none';$('priceContext').textContent='Current report retained';showToast(`Could not load ${t}. Current report retained.`)}else{document.body.classList.remove('has-results');$('status').className='status error';$('status').textContent=`Could not analyze ${t}: ${err.message}`;$('status').style.display='block'}}
+  }catch(err){if(preserveReport){$('status').style.display='none';$('priceContext').textContent='Current report retained';showToast(`Could not load ${t}. Current report retained.`)}else{document.body.classList.remove('has-results');$('status').className='status error';$('status').textContent=`Could not analyze ${t}: ${err.message}`;$('status').style.display='block'}}finally{document.body.classList.remove('is-loading');document.body.removeAttribute('aria-busy');document.querySelectorAll('#landingForm button,#appForm button').forEach(button=>button.disabled=false)}
 }
 function safeLocalJSON(key,fallback){try{let value=JSON.parse(localStorage.getItem(key)||'null');return Array.isArray(fallback)?(Array.isArray(value)?value:fallback):(value&&typeof value==='object'&&!Array.isArray(value)?value:fallback)}catch(_){return fallback}}
 function readJournal(ticker){let j=safeLocalJSON(`ask-warren-journal-v1:${ticker}`,{});return {theses:Array.isArray(j.theses)?j.theses.filter(x=>Array.isArray(x.statements)&&x.statements.length>=1&&x.statements.length<=3&&x.statements.every(t=>typeof t==='string'&&t.length>0&&t.length<=500)&&Array.isArray(x.invalidation_conditions)&&x.invalidation_conditions.length<=3&&x.invalidation_conditions.every(t=>typeof t==='string'&&t.length<=500)&&friendlyDate(x.saved_at)).slice(-24):[],reports:Array.isArray(j.reports)?j.reports.filter(x=>x&&typeof x==='object'&&typeof x.thesis==='string'&&friendlyDate(x.saved_at)).slice(-24):[]}}
